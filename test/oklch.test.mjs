@@ -22,6 +22,11 @@ const close = (actual, expected, tol, what) =>
 test('parseOklch reads all three components', () => {
   assert.deepEqual(parseOklch('oklch(0.985 0 0)'), { L: 0.985, C: 0, h: 0 });
   assert.deepEqual(parseOklch('  oklch(0.5 0.19 27)  '), { L: 0.5, C: 0.19, h: 27 });
+  // CSS function names are ASCII case-insensitive, so this IS an oklch()
+  // literal. Without the regex's `i` flag it returned null and would have been
+  // skipped as "not a colour" — the same silent-skip hole, one keystroke away.
+  assert.deepEqual(parseOklch('OKLCH(0.985 0 0)'), { L: 0.985, C: 0, h: 0 });
+  assert.deepEqual(parseOklch('Oklch(0.5 0.19 27)'), { L: 0.5, C: 0.19, h: 27 });
 });
 
 // null is reserved for "not an oklch() literal", which a caller may skip freely.
@@ -42,6 +47,7 @@ test('parseOklch throws on oklch() forms it cannot measure', () => {
     'oklch(0.5 0.1 -20)', // signed hue
     'oklch(0.5 0.19)', // too few components
     'oklch(1.2.3 0 0)', // malformed number, would otherwise yield NaN
+    'OKLCH(98.5% 0 0)', // uppercase is still an oklch() literal, still unmeasurable
   ]) {
     assert.throws(() => parseOklch(value), /unsupported oklch\(\) form/, value);
   }
