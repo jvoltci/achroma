@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>achroma — token reference</title>
     <link rel="stylesheet" href="./achroma.css" />
+    <link rel="stylesheet" href="./achroma.components.css" />
     <style>
       /* Page layout only. Every visual value comes from a token — a hardcoded
          colour, size or duration in here would be a finding. */
@@ -122,102 +123,28 @@
         gap: var(--s-4);
       }
 
-      .card {
-        background: var(--bg-raised);
-        border: 1px solid var(--hairline);
-        border-radius: var(--r-md);
-        padding: var(--s-5);
-      }
-      .card.sunken {
-        background: var(--bg-sunken);
-      }
-      .card h3 {
+      /* Cards, buttons, fields, badges and tables are NOT defined here. They come
+         from achroma.components.css, which this page imports above, and using them
+         is the point: for a while this file hand-rolled `button { font: inherit }`
+         in exactly this spot, and that quietly concealed the fact that the package
+         applied --font-sans to no form control at all. A reference page that
+         repairs the thing it is documenting cannot detect a gap in it.
+
+         Only the h3/p rhythm inside a card is local, because that is this page's
+         layout rather than a component. */
+      .ac-card h3 {
         font-size: var(--text-base);
         font-weight: var(--w-medium);
         letter-spacing: var(--track-tight);
         margin: 0 0 var(--s-2);
       }
-      .card p {
+      .ac-card > p {
         margin: 0 0 var(--s-4);
         color: var(--fg-dim);
         font-size: var(--text-sm);
       }
 
-      /* ── controls ─────────────────────────────────────────────────── */
-
-      button {
-        font: inherit;
-        font-size: var(--text-sm);
-        background: transparent;
-        color: var(--fg-dim);
-        border: 1px solid var(--rule);
-        border-radius: var(--r-sm);
-        padding: var(--s-2) var(--s-3);
-        cursor: pointer;
-        transition:
-          color var(--dur-1) var(--ease-out),
-          border-color var(--dur-1) var(--ease-out),
-          transform var(--dur-1) var(--ease-spring);
-      }
-      button:hover {
-        color: var(--fg);
-        border-color: var(--fg);
-        transform: translateY(-1px);
-      }
-      button.filled {
-        background: var(--fg);
-        color: var(--bg);
-        border-color: var(--fg);
-        font-weight: var(--w-medium);
-      }
-
-      input[type='text'],
-      select {
-        font: inherit;
-        font-size: var(--text-sm);
-        background: var(--bg);
-        color: var(--fg);
-        border: 1px solid var(--rule);
-        border-radius: var(--r-sm);
-        padding: var(--s-2) var(--s-3);
-        width: 100%;
-      }
-
-      /* ── semantic callouts ────────────────────────────────────────── */
-
-      .note {
-        padding: var(--s-3) var(--s-4);
-        border: 1px solid;
-        border-left-width: 3px;
-        border-radius: var(--r-sm);
-        font-size: var(--text-sm);
-        margin-bottom: var(--s-3);
-      }
-      .note.ok {
-        border-color: var(--ok-line);
-        background: var(--ok-bg);
-        color: var(--ok-text);
-      }
-      .note.warn {
-        border-color: var(--warn-line);
-        background: var(--warn-bg);
-        color: var(--warn-text);
-      }
-      .note.danger {
-        border-color: var(--danger-line);
-        background: var(--danger-bg);
-        color: var(--danger-text);
-      }
-      .note.accent {
-        border-color: var(--accent-line);
-        background: var(--accent-bg);
-        color: var(--accent-text);
-      }
-      .note.info {
-        border-color: var(--info-line);
-        background: var(--info-bg);
-        color: var(--info-text);
-      }
+      .ac-note { margin-bottom: var(--s-3); }
 
       /* ── elevation ────────────────────────────────────────────────── */
 
@@ -324,9 +251,9 @@
       <div class="top">
         <p class="ac-label" style="margin: 0">achroma 0.2.0 — token reference</p>
         <div class="modes">
-          <button type="button" data-mode="auto" class="filled">Auto</button>
-          <button type="button" data-mode="light">Light</button>
-          <button type="button" data-mode="dark">Dark</button>
+          <button type="button" data-mode="auto" class="ac-btn ac-btn-sm ac-btn-fill">Auto</button>
+          <button type="button" data-mode="light" class="ac-btn ac-btn-sm">Light</button>
+          <button type="button" data-mode="dark" class="ac-btn ac-btn-sm">Dark</button>
         </div>
       </div>
 
@@ -349,19 +276,19 @@
 
       <section>
         <h2>Semantics — status, plus one affordance</h2>
-        <div class="note ok">Succeeded. <code>--ok-text</code> on <code>--ok-bg</code>.</div>
-        <div class="note warn">
+        <div class="ac-note ac-note-ok">Succeeded. <code>--ok-text</code> on <code>--ok-bg</code>.</div>
+        <div class="ac-note ac-note-warn">
           Read this before trusting the output. <code>--warn-text</code> on
           <code>--warn-bg</code>.
         </div>
-        <div class="note danger">
+        <div class="ac-note ac-note-danger">
           This failed. <code>--danger-text</code> on <code>--danger-bg</code>.
         </div>
-        <div class="note accent">
+        <div class="ac-note ac-note-accent">
           The accent is the only hue that is not a status. It marks affordance —
           what you can act on. <code>--accent-text</code> on <code>--accent-bg</code>.
         </div>
-        <div class="note info">
+        <div class="ac-note ac-note-info">
           For your information — and note that it carries no hue at all.
           <code>--info-text</code> on <code>--info-bg</code>. The three states that
           ask you to act get a colour; the one that says nothing is wrong does not.
@@ -398,30 +325,32 @@
       <section>
         <h2>Surfaces, controls, structure</h2>
         <div class="grid2">
-          <div class="card">
+          <div class="ac-card">
             <h3>Raised surface</h3>
             <p>
               Hairline border, 4px radius, depth from tone rather than shadow. The
               border is what defines the edge — the tonal step is deliberately
               slight.
             </p>
-            <button type="button" class="filled">Filled</button>
-            <button type="button">Default</button>
+            <button type="button" class="ac-btn ac-btn-fill">Primary</button>
+            <button type="button" class="ac-btn ac-btn-ink">Ink</button>
+            <button type="button" class="ac-btn">Default</button>
+            <button type="button" class="ac-btn ac-btn-ghost">Ghost</button>
           </div>
 
-          <div class="card sunken">
+          <div class="ac-card ac-card-sunken">
             <h3>Sunken surface</h3>
             <p>Tab focus through these to see the ring, which is a token so it can invert.</p>
             <div style="display: grid; gap: var(--s-2)">
-              <input type="text" placeholder="Input on --bg" />
-              <select>
+              <input type="text" class="ac-field" placeholder="Input on --bg" />
+              <select class="ac-field">
                 <option>A select</option>
                 <option>Second option</option>
               </select>
             </div>
           </div>
 
-          <div class="card">
+          <div class="ac-card">
             <h3>Hairline list</h3>
             <div class="list">
               <div><span>Neutral ramp</span><span>16 steps</span></div>
@@ -432,7 +361,7 @@
             </div>
           </div>
 
-          <div class="card">
+          <div class="ac-card">
             <h3>Headings</h3>
             <h1 style="font-size: var(--text-2xl); margin: 0 0 var(--s-2)">h1</h1>
             <h2 style="font-size: var(--text-xl); margin: 0 0 var(--s-2)">h2</h2>
@@ -512,7 +441,7 @@
           if (mode === 'auto') delete document.documentElement.dataset.theme;
           else document.documentElement.dataset.theme = mode;
           for (const o of document.querySelectorAll('[data-mode]')) {
-            o.classList.toggle('filled', o === b);
+            o.classList.toggle('ac-btn-fill', o === b);
           }
           paint();
         });

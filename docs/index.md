@@ -87,6 +87,57 @@ step costs **α 0.023 in light and α 0.528 in dark** — 23× apart. Two conseq
 
 Full measurements in [Elevation](tokens.md#elevation).
 
+## One accent, and it means affordance
+
+There are exactly two kinds of colour here:
+
+- **Status** — `--danger`, `--warn`, `--ok`. What happened.
+- **Affordance** — `--accent`. What you can do.
+
+Both are meaning, so *colour is never decoration* still holds. And the accent is not
+a concession to taste: a fully achromatic page reads muted for a structural reason —
+"you can act on this" has nowhere to go, leaving weight and position to carry it
+alone.
+
+Indigo, hue 285, chosen against three alternatives on measured grounds. Max in-gamut
+chroma at the shipped lightness of `0.520`:
+
+| Hue | Chroma | |
+|---|---|---|
+| indigo 285 | **0.200** | shipped |
+| magenta 340 | 0.196 | reads consumer/fashion in light mode |
+| blue 250 | 0.128 | already Vercel's, Stripe's and Things' |
+| teal 200 | 0.077 | sRGB has almost no chroma in blue-green at mid lightness |
+
+285 also sits far from all three status hues — 27, 78 and 152 — so an accent border
+can never be misread as a warning.
+
+Spend it on **1–3% of the pixels**. `::selection` is the highest-leverage place it
+appears: a visitor triggers it by reflex, dozens of times a session. Full numbers in
+[Accent](tokens.md#accent-the-one-hue-that-is-not-a-status).
+
+Want no hue at all? One line puts the ink button back:
+
+```css
+:root { --color-primary: var(--fg); --color-primary-foreground: var(--bg) }
+```
+
+## Components — the essentials, opt-in
+
+```css
+@import 'achroma/achroma.css';
+@import 'achroma/achroma.components.css';
+```
+
+Nine primitives plus three layout helpers, all in `@layer components`. See
+[Components](components.md).
+
+**Dialog, dropdown, tabs, tooltip and toast are deliberately absent.** Each needs
+focus trapping, ARIA wiring and keyboard handling to be correct, and CSS alone
+produces something that looks right in a screenshot and is unusable with a keyboard
+— which is worse than shipping nothing, because it looks finished. Use Radix or
+shadcn and let [the bridge](tailwind.md) style them.
+
 ## The signature ships as four classes
 
 `.ac-display` is huge, thin and tight; `.ac-label` is tiny, wide, uppercase and
@@ -101,9 +152,15 @@ that the collision is a matter of time.
 ## The live reference
 
 <https://jvoltci.github.io/achroma/> renders `proof.html`: every ramp step, every
-alias, both modes, the type scale, the semantic callouts and the grain, all read
-back from *computed* values. If a swatch there renders transparent, that token is
-missing — the page cannot claim a token exists when it does not.
+alias, both modes, the type scale, the semantic callouts, the elevation levels, the
+components and the grain — with the colour values read back from *computed* style.
+If a swatch there renders transparent, that token is missing. The page cannot claim
+a token exists when it does not.
+
+It also consumes `achroma.components.css` rather than restyling buttons and inputs
+in its own `<style>`. That is deliberate: for a while it *did* hand-roll them, which
+quietly hid the fact that the package was not applying `--font-sans` to any form
+control at all.
 
 ## The claims are machine-asserted
 
@@ -113,11 +170,18 @@ npm run test:cascade   # cascade: needs Chrome. Not part of npm test.
 ```
 
 `npm test` asserts chroma is exactly 0 on all 16 ramp steps, that the ramp is
-monotonic, that the four alias blocks agree, that every chromatic token is inside
-the sRGB gamut, that elevation is black at alpha and heavier in dark at every
-layer, and every contrast target on this site — 19 of them, in each mode. It prints
-each ratio whether it passes or not, because a pass/fail line tells you less than
-the numbers do.
+monotonic, that the four alias blocks agree, that every chromatic token is inside the
+sRGB gamut, that elevation is black at alpha and heavier in dark at every layer, that
+both optional files reference only tokens that exist, that every stylesheet in the
+repo is listed in `files` **and** `exports`, and every contrast target on this site —
+23 of them, in each mode. It prints each ratio whether it passes or not, because a
+pass/fail line tells you less than the numbers do.
+
+`npm run test:cascade` is 81 assertions in real Chrome, covering what a regex cannot
+reach: the 14-cell mode matrix, consumer-override precedence, Tailwind layer order,
+the focus ring, the `prefers-*` queries, whether `--info-*` still flips inside a
+nested `<section class="dark">` despite being an alias of an alias, and whether
+`--shadow-*` and `--scrim` resolve per mode.
 
 That is what makes the numbers on these pages checkable rather than aspirational.
 The ones `npm test` cannot see are called out where they appear: the grain and the

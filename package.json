@@ -6,7 +6,14 @@
   "author": "JAI <jvoltci@gmail.com> (https://github.com/jvoltci)",
   "type": "module",
   "bugs": "https://github.com/jvoltci/achroma/issues",
-  "keywords": ["design-system", "design-tokens", "css", "achromatic", "monochrome", "greyscale"],
+  "keywords": [
+    "design-system",
+    "design-tokens",
+    "css",
+    "achromatic",
+    "monochrome",
+    "greyscale"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jvoltci/achroma.git"
@@ -14,12 +21,25 @@
   "homepage": "https://jvoltci.github.io/achroma/",
   "exports": {
     "./achroma.css": "./achroma.css",
+    "./achroma.components.css": "./achroma.components.css",
     "./achroma.tailwind.css": "./achroma.tailwind.css",
     "./fonts/*": "./fonts/*"
   },
-  "files": ["achroma.css", "achroma.tailwind.css", "fonts", "NOTICE"],
-  "sideEffects": ["*.css"],
-  "browserslist": ["chrome >= 111", "safari >= 16.4", "firefox >= 113"],
+  "files": [
+    "achroma.css",
+    "achroma.components.css",
+    "achroma.tailwind.css",
+    "fonts",
+    "NOTICE"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "browserslist": [
+    "chrome >= 111",
+    "safari >= 16.4",
+    "firefox >= 113"
+  ],
   "dependencies": {},
   "scripts": {
     "test": "node test/oklch.test.mjs && node test/contrast.mjs",

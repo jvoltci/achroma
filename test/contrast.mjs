@@ -28,7 +28,7 @@
 // nothing else — an unmeasurable colour crashes the run rather than silently
 // dropping out of the report.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { parseOklch, contrast, oklchToLinearSrgb } from './oklch.mjs';
@@ -507,6 +507,42 @@ for (const file of ['achroma.tailwind.css', 'achroma.components.css']) {
       /@layer\s+components\s*\{/.test(text),
       `${file} does not open \`@layer components\`. Unlayered, every primitive in ` +
         `it outranks every Tailwind utility a consumer writes.`,
+    );
+  }
+}
+
+// ── 7b. every stylesheet in the repo is actually shipped ──────────────
+//
+// A file can be flawless and still never reach a consumer. package.json holds two
+// independent gates, and missing either one fails silently in a DIFFERENT way:
+//
+//   files    absent -> the file is not in the npm tarball at all.
+//   exports  absent -> `@import 'achroma/<name>'` throws
+//                      ERR_PACKAGE_PATH_NOT_EXPORTED even though the file shipped.
+//
+// This is not hypothetical. achroma.components.css was added to both, and then a
+// `git checkout -- package.json` while unwinding an unrelated release commit
+// reverted them. The component layer would have published as nothing whatsoever —
+// present in the repo, absent from the package — with every other assertion in this
+// file passing, the tests green, and the docs describing nine primitives that no
+// consumer could import.
+{
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const sheets = readdirSync(root).filter((f) => /^achroma.*\.css$/.test(f));
+
+  check(sheets.length > 0, 'no achroma*.css found in the repo root — nothing to ship');
+
+  for (const name of sheets) {
+    check(
+      (pkg.files ?? []).includes(name),
+      `${name} is missing from package.json "files", so it will not be in the npm ` +
+        `tarball. The file is right here and would simply not exist for consumers.`,
+    );
+    check(
+      Object.hasOwn(pkg.exports ?? {}, `./${name}`),
+      `${name} is missing from package.json "exports", so ` +
+        `\`@import 'achroma/${name}'\` throws ERR_PACKAGE_PATH_NOT_EXPORTED even ` +
+        `though the file itself ships.`,
     );
   }
 }
