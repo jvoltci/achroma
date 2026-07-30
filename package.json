@@ -23,6 +23,7 @@
   "dependencies": {},
   "scripts": {
     "test": "node test/oklch.test.mjs && node test/contrast.mjs",
-    "test:cascade": "node test/cascade.mjs"
+    "test:cascade": "node test/cascade.mjs",
+    "prepublishOnly": "npm test"
   }
 }
