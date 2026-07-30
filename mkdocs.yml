@@ -66,6 +66,15 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
 
+# --strict alone does NOT check anchors — only whether the target FILE exists. So
+# `tokens.md#elevation` and `tokens.md#no-such-heading` were equally acceptable,
+# and there are ten cross-page anchor links in these docs. Renaming one heading
+# would have silently broken every link into it. `anchors: warn` plus --strict
+# turns that into a build failure.
+validation:
+  anchors: warn
+  unrecognized_links: warn
+
 nav:
   - Start here:
       - Overview: index.md

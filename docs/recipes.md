@@ -14,13 +14,49 @@ hardcoded colour, size or duration in any of these would be a finding.
 }
 ```
 
-Depth comes from tone and a hairline, not a shadow. The border is what defines the
-edge; the tonal step is deliberately slight — `--n-25` to `--n-0` in light,
-`--n-900` to `--n-850` in dark. A sunken variant is one declaration:
+The hairline is not optional, and the number says why. `--bg-raised` on `--bg` is
+**1.044:1** in light mode — below the 1.15:1 floor the suite sets for `--hairline`
+itself, which is a purely decorative line. Drop the border in light mode and the
+card has no edge at all.
+
+Dark mode does not have this problem: the same step is 1.104:1 there, 2.4× better,
+because the ramp is denser at the light end than the dark end. The two modes are
+complementary, and the honest summary is:
+
+| | `--bg-raised` on `--bg` | What carries the edge |
+|---|---|---|
+| light | 1.044:1 | `--hairline`, or `--shadow-*` |
+| dark | 1.104:1 | the tonal step, plus `--hairline` |
+
+A sunken variant is one declaration:
 
 ```css
 .card.sunken {
   background: var(--bg-sunken);
+}
+```
+
+### Borderless, with elevation instead
+
+If you want the edge to come from shadow rather than a line — a floating popover,
+a dropdown, a command palette — use `--shadow-2` and drop the border:
+
+```css
+.popover {
+  background: var(--bg-raised);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+  padding: var(--s-4);
+}
+```
+
+In dark mode add the hairline back. A black shadow on a near-black page has only
+about two ramp steps of room below `--bg` before it hits pure black, so shadow
+alone cannot carry dark-mode elevation however heavy you make it:
+
+```css
+@media (prefers-color-scheme: dark) {
+  .popover { border: var(--line-1) solid var(--hairline); }
 }
 ```
 

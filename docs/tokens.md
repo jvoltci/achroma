@@ -61,11 +61,12 @@ because otherwise "one step darker" is a lie the aliases are built on.
     do not tighten a limit to 3.48 on the strength of a computed 3.4711 — a
     third-party checker reading 3.49 would disagree with you.
 
-## The 18 aliases — what a mode change actually does
+## The 21 aliases — what a mode change actually does
 
-A mode change re-points these and touches nothing else. Nine are neutral, and the
-table gives the ramp step each mode aims them at. The other nine carry hue and
-are listed in [Semantics](#semantics-the-only-colour-in-the-system).
+A mode change re-points these and touches nothing else. Twelve are neutral: the
+nine structural ones below, plus the three `--info-*` tokens listed under
+[Semantics](#semantics-the-only-colour-in-the-system). The remaining nine carry
+hue and are listed there too.
 
 | Alias | Light | Dark | What it is for | Asserted target | Light | Dark |
 |---|---|---|---|---|---|---|
@@ -91,8 +92,8 @@ absent.
 
 ## Semantics — the only colour in the system
 
-Nine tokens, three per state, and the split is not stylistic. One token cannot do
-three jobs at three different contrast requirements:
+Twelve tokens, three per state across four states, and the split is not stylistic.
+One token cannot do three jobs at three different contrast requirements:
 
 | Suffix | Job | Requirement |
 |---|---|---|
@@ -121,6 +122,38 @@ Splitting the token is the only way out.
 Every value above was measured, not estimated. Three earlier drafts did not
 survive: `--warn-text` was outside the sRGB gamut, `--warn-line` had no margin at
 3.03:1, and dark `--danger-line` failed at 2.95:1.
+
+### Info is the fourth state, and it carries no hue
+
+`danger`, `warn` and `ok` earn a hue because each one asks the reader to do
+something. Info does not — it is the state that says nothing is wrong. In a system
+whose whole claim is that colour means something, spending a fourth hue on the
+absence of a problem devalues the other three.
+
+So info is neutral. That is the position, not a gap in the palette. It keeps the
+same three-token shape and clears the same floors:
+
+| Token | Light | Dark | On `--bg` (light / dark) | On its `-bg` (light / dark) |
+|---|---|---|---|---|
+| `--info-text` | `var(--fg-dim)` | `var(--fg-dim)` | 5.28:1 / 7.71:1 (≥ 4.5) | 5.02:1 / 8.11:1 (≥ 4.5) |
+| `--info-line` | `var(--fg-faint)` | `var(--fg-faint)` | 3.49:1 / 5.25:1 (≥ 3.0) | — |
+| `--info-bg` | `var(--bg-sunken)` | `var(--bg-sunken)` | — | — |
+
+`--info-line` is `--fg-faint` and not `--rule`, which is the one non-obvious choice
+here. `--rule` is 1.56:1 in light, so an info border built from it would be four
+times fainter than a warn border and would break the "`-line` clears 3:1" contract
+every other semantic keeps.
+
+**These are aliases of aliases, and they are still written out in all four
+blocks.** That looks redundant and is not. A custom property's computed value is
+its specified value *with variables already substituted*, so a single
+`--info-text: var(--fg-dim)` on `:root` would resolve once against light's
+`--fg-dim` and then inherit that finished colour into a nested
+`<section class="dark">` unchanged — the section would flip `--bg` and `--fg` and
+silently keep the light info grey. Verified in Chrome: with the declaration on
+`:root` only, `--info-bg` inside a dark section came back as `oklch(0.968 0 0)`, a
+near-white fill on a dark surface. `--ring` has the same shape for the same reason,
+and `test/cascade.mjs` asserts the nested case.
 
 ### Why the gamut check exists
 
@@ -195,6 +228,22 @@ vendor them.
 | `--s-5` | `1.25rem` | | `--s-20` | `5rem` |
 | `--s-6` | `1.5rem` | | `--s-24` | `6rem` |
 
+## Line weight
+
+| Token | Value |
+|---|---|
+| `--line-1` | `1px` |
+| `--line-2` | `2px` |
+
+The look is built out of fine lines, so the width is a token rather than a
+hardcoded `1px` in every rule. Mode-independent — widths do not flip.
+
+`--line-1` stays at `1px` and not a hairline fraction. A `0.5px` border is a real
+option on a 2× display, but on a 1× display it rounds to either 0 or 1
+unpredictably per edge, so a four-sided box loses one or two of its sides. If you
+want true hairlines, put them behind a `min-resolution` query in your own CSS; this
+package will not ship a border that vanishes.
+
 ## Radius — near-sharp on purpose
 
 | Token | Value |
@@ -203,6 +252,90 @@ vendor them.
 | `--r-sm` | `2px` |
 | `--r-md` | `4px` |
 | `--r-lg` | `8px` |
+| `--r-full` | `999px` |
+
+`--r-full` is a large fixed length and not `50%`. On a non-square box `50%` gives
+an ellipse, which is wrong for a pill-shaped badge or a switch track; a large
+length clamps to a semicircle on the short axis at any aspect ratio. It is also not
+`calc(infinity * 1px)`, which is cleaner but outside this package's browserslist
+floor — the two are indistinguishable below about 2000px.
+
+## Elevation
+
+Achromatic design gives up hue as a hierarchy channel, which leaves lightness,
+weight, space, line and shadow. Shadow is not decoration here; in light mode it is
+the only thing that can give a borderless surface an edge.
+
+| Token | Light | Dark | For |
+|---|---|---|---|
+| `--shadow-1` | 1 layer, α 0.05 | 1 layer, α 0.55 | Resting lift — button, input |
+| `--shadow-2` | 2 layers, α 0.04 / 0.06 | 2 layers, α 0.50 / 0.60 | Card, popover, dropdown |
+| `--shadow-3` | 3 layers, α 0.04 / 0.08 / 0.10 | 3 layers, α 0.50 / 0.65 / 0.70 | Modal, command palette |
+| `--scrim` | α 0.55 | α 0.65 | The backdrop behind a modal |
+
+There is no level 4. A fourth elevation step is a sign the layout needs fixing, not
+the shadow.
+
+### Shadow is black at alpha, never a tinted grey
+
+Every colour in every one of these is `oklch(0 0 0 / α)`. Most systems tint their
+shadows blue-grey without meaning to — a slate at low alpha is the usual culprit —
+and it is the one colour in this file no other check could see, because
+`--shadow-*` is a `box-shadow` list rather than a colour and the gamut and contrast
+passes only ever look at colours. `test/contrast.mjs` asserts chroma and hue are
+literally `0`, and rejects `rgba()`, `hsl()` and hex notation because they would
+slip straight past that check.
+
+### The alphas are 23× apart, and that is measured
+
+Browsers composite in gamma-encoded sRGB, not linear light. The alpha needed to
+darken `--bg` by exactly one ramp step:
+
+| Mode | `--bg` | One step to | Alpha |
+|---|---|---|---|
+| light | `--n-25` | `--n-50` | **0.023** |
+| dark | `--n-900` | `--n-950` | **0.528** |
+
+That is why a single shadow set shared by both modes has an invisible dark mode —
+not a subtler one, an absent one. It is also why the dark alphas above look absurd
+written down and read as subtle on screen. `test/contrast.mjs` asserts dark exceeds
+light at every layer, so the two sets cannot be casually unified by someone tidying
+up, and `test/cascade.mjs` asserts a real browser resolves them per mode.
+
+### Dark mode has a ceiling that light does not
+
+There are only about two ramp steps of room below dark `--bg` before pure black, so
+shadow can never carry dark-mode elevation on its own. The surface numbers show the
+two modes are complementary:
+
+| | `--bg-raised` on `--bg` | What carries the edge |
+|---|---|---|
+| light | 1.044:1 | `--shadow-*`, or `--hairline` |
+| dark | 1.104:1 | the tonal step, plus `--hairline` |
+
+Light's 1.044:1 is *below* the 1.15:1 floor this file sets for `--hairline`, a
+purely decorative line. So a raised surface in light mode is invisible on tone
+alone. Both surface pairs are pinned in `TARGETS` now — nothing tested them before,
+so the ramp could have been flattened further without a single assertion noticing.
+
+### The scrim cannot do its job in dark mode
+
+Measured as the contrast between the scrimmed page and the dialog surface
+(`--bg-raised`), which is the job it is doing:
+
+| Alpha | 0.35 | 0.45 | 0.55 | 0.65 | 0.72 | 0.80 |
+|---|---|---|---|---|---|---|
+| light | 2.54 | 3.48 | **4.92** | 7.17 | 9.44 | 12.82 |
+| dark | 1.14 | 1.15 | 1.16 | **1.17** | 1.18 | 1.19 |
+
+The dark row is the finding: darkening a near-black page cannot separate it from
+anything, and α 0.80 buys 0.05 over α 0.35. A dark dialog gets its separation from
+`--bg-raised`, `--shadow-3` and a `--hairline`; the scrim is only there to mute the
+content behind it and to catch the click that dismisses it.
+
+`--scrim` is deliberately **not** in `TARGETS`. It composites, and the suite reads
+bare token values — and `parseOklch` throws on an alpha component by design rather
+than silently measuring the wrong thing.
 
 ## Motion
 
@@ -227,6 +360,28 @@ It is deliberately **not** `animation-iteration-count: 1`. That runs a
 its final frame, leaving a reduced-motion user unable to tell "loading" from
 "hung". Non-decorative progress indicators are the standard carve-out; removing
 the duration is enough.
+
+### `--stagger` needs an index
+
+`--stagger` is a step, not a delay, and CSS cannot supply the index it has to be
+multiplied by. There is no class to ship — the index comes from your markup or
+template:
+
+```html
+<li style="--i: 0">first</li>
+<li style="--i: 1">second</li>
+<li style="--i: 2">third</li>
+```
+
+```css
+li {
+  animation: rise var(--dur-3) var(--ease-spring) both;
+  animation-delay: calc(var(--i) * var(--stagger));
+}
+```
+
+It goes to `0ms` under `prefers-reduced-motion` along with the durations, so a list
+that staggers in does not become a list that appears one item at a time in silence.
 
 ## Texture, and its ceilings
 

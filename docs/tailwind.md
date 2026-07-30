@@ -90,9 +90,21 @@ inverting the pair is the whole treatment.
 | `--color-destructive` | `--danger-text` |
 | `--color-destructive-foreground` | `--n-0` |
 
-shadcn has only `destructive`. `warn` and `ok` have no mapping here and must be
-used through the Achroma tokens directly. Note that `destructive` maps to
+shadcn has only `destructive`. `warn`, `ok` and `info` have no mapping here and
+must be used through the Achroma tokens directly. Note that `destructive` maps to
 `--danger-text`, the variant that clears 4.5:1; `--danger-line` would not.
+
+`info` needs no mapping in practice: it is neutral, so `--color-muted-foreground`
+already resolves to the same `--fg-dim` that `--info-text` does.
+
+| shadcn / Tailwind | Achroma |
+|---|---|
+| `--color-scrim` | `--scrim` |
+
+`--color-scrim` exists so you can replace shadcn's hardcoded `bg-black/50` overlay
+with `bg-scrim` and get the per-mode value. **Do not also apply a `/50` modifier** —
+`--scrim` already carries its own alpha, and Tailwind would override it and hand
+back the light value in both modes.
 
 ### Lines and focus
 
@@ -136,6 +148,47 @@ shadcn treats the sidebar as its own surface set:
 
 `--radius-xl` collapses onto `--r-lg` (8px) on purpose: the radius scale is
 near-sharp and stops there.
+
+`--radius-full` is deliberately **not** mapped. Tailwind's own default is
+`calc(infinity * 1px)`, which pills correctly at any height; achroma ships
+`--r-full: 999px` instead because `calc()` infinity is outside this package's
+browserslist floor. Overriding Tailwind's with ours would be a downgrade for no
+gain — the two are indistinguishable below about 2000px.
+
+### Elevation
+
+All seven of Tailwind's shadow names are remapped, and the completeness is the
+point:
+
+| Tailwind | Achroma |
+|---|---|
+| `--shadow-2xs` | `--shadow-1` |
+| `--shadow-xs` | `--shadow-1` |
+| `--shadow-sm` | `--shadow-1` |
+| `--shadow-md` | `--shadow-2` |
+| `--shadow-lg` | `--shadow-2` |
+| `--shadow-xl` | `--shadow-3` |
+| `--shadow-2xl` | `--shadow-3` |
+
+Tailwind ships **one** shadow scale for both modes. Because browsers composite in
+gamma-encoded sRGB, the alpha that darkens the page by one ramp step is 0.023 in
+light and 0.528 in dark — 23× apart — so any Tailwind default left unmapped is not
+a subtler shadow in dark mode, it is **no shadow at all**. A single surviving
+`shadow-2xl` would be the one flat card on the page. See
+[Elevation](tokens.md#elevation) for the measurements.
+
+Seven names collapse onto three levels because achroma has three, and that is lossy
+on purpose: a fourth elevation level is a sign the layout needs fixing rather than
+the shadow. shadcn reaches for `xs`, `sm`, `md` and `lg`.
+
+One consequence worth knowing: Tailwind's `shadow-<color>` utilities will not
+recolour these, because it cannot find a colour slot to substitute in a value it did
+not generate. In an achromatic system that is the desired outcome.
+
+The bridge uses `@theme inline`, and for shadows that is load-bearing rather than
+stylistic. Without `inline`, Tailwind would emit `--shadow-md: var(--shadow-2)` onto
+`:root`, where it would compute **once** against light's value and then never flip —
+the same substitution trap that forces `--info-*` to be written out per block.
 
 ## The bridge is asserted, because a broken `var()` is silent
 

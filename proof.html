@@ -18,13 +18,11 @@
         margin: 0 auto;
       }
 
-      /* ── the signature: huge and thin against tiny and wide ───────── */
-
+      /* .display and .label both ship in achroma.css now, so this page no
+         longer defines them — it only adds the margin the class deliberately
+         leaves alone, since margin is layout and not a type treatment. If the
+         headline below renders at body size, the shipped class is broken. */
       .display {
-        font-size: var(--text-display);
-        font-weight: var(--w-thin);
-        letter-spacing: var(--track-display);
-        line-height: var(--lh-display);
         margin: 0 0 var(--s-5);
       }
 
@@ -210,6 +208,67 @@
         background: var(--danger-bg);
         color: var(--danger-text);
       }
+      .note.info {
+        border-color: var(--info-line);
+        background: var(--info-bg);
+        color: var(--info-text);
+      }
+
+      /* ── elevation ────────────────────────────────────────────────── */
+
+      /* No border on these, deliberately. --bg-raised on --bg is 1.044:1 in
+         light mode — below the 1.15:1 floor the suite sets for a decorative
+         hairline — so if you can see these boxes at all, the shadow is the only
+         reason. Compare them in dark mode: there the tonal step carries itself
+         and the shadows have far less to do. */
+      .lift {
+        background: var(--bg-raised);
+        border-radius: var(--r-md);
+        padding: var(--s-4);
+        font-size: var(--text-sm);
+      }
+      .lift.e1 { box-shadow: var(--shadow-1); }
+      .lift.e2 { box-shadow: var(--shadow-2); }
+      .lift.e3 { box-shadow: var(--shadow-3); }
+
+      /* A static stand-in for a modal, so --scrim is visible in the reference.
+         In light the scrimmed backdrop sits 4.92:1 from the dialog surface; in
+         dark no alpha gets past ~1.17:1, which is why the dialog there leans on
+         --bg-raised, --shadow-3 and a --hairline instead. */
+      .stage {
+        position: relative;
+        overflow: hidden;
+        border: var(--line-1) solid var(--hairline);
+        border-radius: var(--r-md);
+        padding: var(--s-4);
+        font-size: var(--text-sm);
+        color: var(--fg-dim);
+      }
+      .stage .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+      }
+      .stage .dialog {
+        position: relative;
+        background: var(--bg-raised);
+        border: var(--line-1) solid var(--hairline);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-3);
+        color: var(--fg);
+        padding: var(--s-4);
+        margin: var(--s-8) var(--s-4) var(--s-2);
+      }
+
+      .pill {
+        display: inline-block;
+        border: var(--line-1) solid var(--rule);
+        border-radius: var(--r-full);
+        padding: var(--s-1) var(--s-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--fg-dim);
+      }
 
       /* ── the mode switch ──────────────────────────────────────────── */
 
@@ -253,10 +312,12 @@
       }
     </style>
   </head>
-  <body>
+  <!-- class="wash" is the shipped opt-in atmosphere token, demonstrated here
+       rather than only documented. Remove it and the page reads flatter. -->
+  <body class="wash">
     <main>
       <div class="top">
-        <p class="label" style="margin: 0">achroma 0.1.0 — token reference</p>
+        <p class="label" style="margin: 0">achroma 0.2.0 — token reference</p>
         <div class="modes">
           <button type="button" data-mode="auto" class="filled">Auto</button>
           <button type="button" data-mode="light">Light</button>
@@ -290,6 +351,33 @@
         </div>
         <div class="note danger">
           This failed. <code>--danger-text</code> on <code>--danger-bg</code>.
+        </div>
+        <div class="note info">
+          For your information — and note that it carries no hue at all.
+          <code>--info-text</code> on <code>--info-bg</code>. The three states that
+          ask you to act get a colour; the one that says nothing is wrong does not.
+        </div>
+      </section>
+
+      <section>
+        <h2>Elevation — black at alpha, and 23× heavier in dark</h2>
+        <p class="lede">
+          These three boxes have no border. <code>--bg-raised</code> on
+          <code>--bg</code> is 1.044:1 in light mode, so the shadow is the only
+          reason you can see them — switch to dark and the tonal step takes over.
+        </p>
+        <div class="grid2" style="margin-top: var(--s-5)">
+          <div class="lift e1"><span class="label">shadow-1</span><br />Resting lift — button, input.</div>
+          <div class="lift e2"><span class="label">shadow-2</span><br />Card, popover, dropdown.</div>
+          <div class="lift e3"><span class="label">shadow-3</span><br />Modal, command palette.</div>
+          <div class="stage">
+            Backdrop content, behind the scrim.
+            <div class="scrim"></div>
+            <div class="dialog">
+              <span class="label">scrim + shadow-3</span><br />
+              A dialog over <code>--scrim</code>.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -328,8 +416,9 @@
             <h3>Hairline list</h3>
             <div class="list">
               <div><span>Neutral ramp</span><span>16 steps</span></div>
-              <div><span>Colour aliases</span><span>18</span></div>
-              <div><span>Semantic tokens</span><span>9 × 2 modes</span></div>
+              <div><span>Colour aliases</span><span>21</span></div>
+              <div><span>Semantic tokens</span><span>12 × 2 modes</span></div>
+              <div><span>Elevation</span><span><span class="pill">3 + scrim</span></span></div>
               <div><span>Dependencies</span><span>0</span></div>
             </div>
           </div>
@@ -369,6 +458,7 @@
         '--bg', '--bg-raised', '--bg-sunken',
         '--fg', '--fg-dim', '--fg-faint',
         '--hairline', '--rule', '--ring',
+        '--info-text', '--info-line', '--info-bg',
       ];
       const TYPE = [
         ['display', 'var(--text-display)', 'var(--w-thin)', 'var(--track-display)'],

@@ -3,7 +3,7 @@
 ## Zero config
 
 Import `achroma.css` and set nothing. `@media (prefers-color-scheme: dark)`
-re-points the 18 aliases and there is no other step:
+re-points the 21 aliases and there is no other step:
 
 ```css
 @import 'achroma/achroma.css';
@@ -108,7 +108,8 @@ different consumers:
 - the class serves consumers with a toggle.
 
 Neither can be derived from the other in CSS, so the values are duplicated: four
-blocks of 18 aliases plus `--grain-opacity`.
+blocks of 21 aliases plus `--grain-opacity`, `--wash`, `--shadow-1`, `--shadow-2`,
+`--shadow-3` and `--scrim`.
 
 `test/contrast.mjs` asserts that `dark` and `dark-class` are declaration-identical,
 and likewise `light` and `light-class`. **Nothing else would catch them drifting.**
