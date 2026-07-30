@@ -1,17 +1,21 @@
 // Asserts the things about achroma.css that cannot be seen by reading it.
 //
-// Six classes of check, in order of how quietly they would otherwise fail:
+// Seven classes of check, in order of how quietly they would otherwise fail:
 //
 //   1. grain          a data URI moved into a custom property is truncated at
 //                     its first semicolon by this very parser — 93% of the
 //                     value gone, and every other check still green
 //   2. chroma-zero    a stray 0.01 in the ramp is invisible by eye and would
 //                     propagate to every site that installs this
-//   3. block parity   the dark values are written twice (media query + class)
-//                     and drift between the copies is undetectable by hand
+//   3. block parity   each mode's aliases are written twice (media query +
+//                     class), four blocks of 18 values, and drift between the
+//                     copies is undetectable by hand
 //   4. monotonicity   a ramp step out of order makes "one step darker" a lie
 //   5. gamut          an out-of-gamut hue reports a better ratio than it paints
-//   6. contrast       computed, never assumed
+//   6. cascade        specificity and layer bugs render correctly in one OS
+//                     mode and wrongly in the other, so eyeballing one machine
+//                     proves nothing
+//   7. contrast       computed, never assumed
 //
 // Prints every ratio whether it passes or not. A pass/fail line tells you less
 // than the numbers do.
@@ -36,11 +40,11 @@ const check = (ok, message) => {
   return ok;
 };
 
-/** The 17 aliases that must be defined in both modes. This list is the contract. */
+/** The 18 aliases that must be defined in every mode. This list is the contract. */
 const COLOUR_ALIASES = [
   '--bg', '--bg-raised', '--bg-sunken',
   '--fg', '--fg-dim', '--fg-faint',
-  '--hairline', '--rule',
+  '--hairline', '--rule', '--ring',
   '--danger-text', '--danger-line', '--danger-bg',
   '--warn-text', '--warn-line', '--warn-bg',
   '--ok-text', '--ok-line', '--ok-bg',
@@ -64,12 +68,29 @@ const TARGETS = [
   ['--ok-text', '--ok-bg', 4.5],
 ];
 
+/**
+ * Comments removed, but the `@achroma` markers kept — they are comments too,
+ * and blocks() splits on them.
+ *
+ * This is not tidiness. decls() below takes the LAST definition of a token, and
+ * achroma.css documents its own tokens in prose: a comment reading
+ * `.inverted { --ring: var(--bg) }` was parsed as a real declaration and
+ * overrode the light-class block's actual --ring. That direction fails loudly.
+ * The other direction does not — a comment example that happens to match is
+ * indistinguishable from a real declaration, so a block could pass the parity
+ * check for a token its rule never declares at all. Verified both ways.
+ */
+const stripComments = (s) =>
+  s.replace(/\/\*[\s\S]*?\*\//g, (m) =>
+    /^\/\*\s*@achroma\s+[a-z-]+\s*\*\/$/.test(m) ? m : ' ',
+  );
+
 /** Split the file on the `@achroma <name>` marker comments. */
 function blocks(source) {
   const marks = [...source.matchAll(/\/\*\s*@achroma\s+([a-z-]+)\s*\*\//g)];
   check(
-    marks.length === 3,
-    `expected 3 @achroma markers (light, dark, dark-class), found ${marks.length}`,
+    marks.length === 4,
+    `expected 4 @achroma markers (light, dark, dark-class, light-class), found ${marks.length}`,
   );
   const out = new Map();
   marks.forEach((mark, i) => {
@@ -97,10 +118,11 @@ function resolve(value, ramp) {
   return v && ramp.has(v[1]) ? ramp.get(v[1]) : null;
 }
 
-const parts = blocks(css);
+const parts = blocks(stripComments(css));
 const light = decls(parts.get('light') ?? '');
 const dark = decls(parts.get('dark') ?? '');
 const darkClass = decls(parts.get('dark-class') ?? '');
+const lightClass = decls(parts.get('light-class') ?? '');
 
 // ── 1. the ramp is achromatic ─────────────────────────────────────────
 const ramp = new Map();
@@ -127,19 +149,52 @@ for (let i = 1; i < ordered.length; i++) {
   );
 }
 
-// ── 3. the two dark blocks agree ──────────────────────────────────────
-// They are written twice on purpose — a media query for OS preference, a class
-// for next-themes. Nothing but this check would catch them diverging.
-for (const alias of COLOUR_ALIASES) {
-  check(dark.has(alias), `--dark block is missing ${alias}`);
-  check(darkClass.has(alias), `--dark-class block is missing ${alias}`);
-  if (dark.has(alias) && darkClass.has(alias)) {
-    check(
-      dark.get(alias) === darkClass.get(alias),
-      `dark blocks disagree on ${alias}: media says ${dark.get(alias)}, class says ${darkClass.get(alias)}`,
-    );
+// ── 3. the duplicated alias blocks agree ──────────────────────────────
+//
+// Each mode's alias set is written TWICE, and both copies are load-bearing:
+//
+//   dark        `@media (prefers-color-scheme: dark)` — consumers that follow
+//               the OS.
+//   dark-class  `[data-theme='dark'], .dark` — consumers with a toggle
+//               (next-themes sets .dark).
+//   light       `:root` — the default, and the only block that carries the ramp.
+//   light-class `[data-theme='light'], .light` — needed because the dark media
+//               query's :not() only SUPPRESSES itself on a light-themed root;
+//               without a block that positively declares light tokens,
+//               `<body class="light">` under OS-dark inherited dark ones. It
+//               also pins `color-scheme: light`, which `light dark` cannot do.
+//
+// That is four copies of 18 values. Nothing but this check would catch two of
+// them drifting — a stale copy renders perfectly, just in the wrong mode, and
+// the contrast tables below read only `light` and `dark`, so they never see
+// `dark-class` or `light-class` at all. Verified: changing --fg-dim in the
+// dark-class block alone left every printed ratio byte-identical.
+const PARITY = [
+  ['dark', dark, 'dark-class', darkClass],
+  ['light', light, 'light-class', lightClass],
+];
+for (const [aName, a, bName, b] of PARITY) {
+  for (const alias of COLOUR_ALIASES) {
+    check(a.has(alias), `${aName} block is missing ${alias}`);
+    check(b.has(alias), `${bName} block is missing ${alias}`);
+    if (a.has(alias) && b.has(alias)) {
+      check(
+        a.get(alias) === b.get(alias),
+        `${aName} and ${bName} disagree on ${alias}: ` +
+          `${aName} says ${a.get(alias)}, ${bName} says ${b.get(alias)}`,
+      );
+    }
   }
-  check(light.has(alias), `light block is missing ${alias}`);
+}
+
+// --grain-opacity is not a colour, so it is outside COLOUR_ALIASES — but it is
+// duplicated across all four blocks just the same, so drift is just as invisible.
+for (const [aName, a, bName, b] of PARITY) {
+  check(
+    a.get('--grain-opacity') === b.get('--grain-opacity'),
+    `${aName} and ${bName} disagree on --grain-opacity: ` +
+      `${a.get('--grain-opacity')} vs ${b.get('--grain-opacity')}`,
+  );
 }
 
 // ── 4. the semantics are inside the sRGB gamut ────────────────────────
@@ -234,7 +289,77 @@ check(
     'url("data:image/svg+xml,%3Csvg …").',
 );
 
-// ── 6. contrast ───────────────────────────────────────────────────────
+// ── 6. cascade ────────────────────────────────────────────────────────
+//
+// Four defects lived here, and every one of them rendered correctly on the
+// machine it was written on. These are regex checks on the source, which is
+// weaker than a browser but catches the three structural properties that
+// actually went wrong. The full 14-cell mode matrix was verified separately in
+// real Chrome over CDP; these assertions are what survive in the repo.
+
+// (a) Specificity of the dark media block. `:not()` takes the specificity of
+// its most specific argument, so `:root:not([data-theme='light']):not(.light)`
+// is 0,3,0 and beat a consumer's own `.dark { --bg }` (0,1,0) — but only under
+// OS-dark, so a consumer testing in light mode saw their override work.
+// `:where()` is the zero-specificity wrapper that fixes it.
+for (const m of code.matchAll(/:not\(([^)]*(?:\([^)]*\)[^)]*)*)\)/g)) {
+  check(
+    m[1].trimStart().startsWith(':where('),
+    `:not(${m[1]}) does not wrap its arguments in :where(). :not() contributes ` +
+      `its most specific argument, which lifts the rule above a consumer's own ` +
+      `0,1,0 override — and only when the OS matches, so it looks fine locally.`,
+  );
+}
+
+// (b) The class/attribute alias blocks must not be prefixed with `:root`.
+// `:root[data-theme='dark']` is 0,2,0 and outranks a consumer's
+// `[data-theme='dark']` in BOTH modes; bare selectors tie and source order
+// decides, which puts the consumer's later file on top.
+for (const sel of ["[data-theme='dark']", "[data-theme='light']", '.dark', '.light']) {
+  const escaped = sel.replace(/[.[\]'$]/g, (c) => `\\${c}`);
+  check(
+    !new RegExp(`:root\\s*${escaped}`).test(code),
+    `the ${sel} alias block is prefixed with :root, making it 0,2,0 — it ` +
+      `outranks a consumer's own ${sel} rule instead of tying with it.`,
+  );
+}
+
+// (c) The base rules must be inside `@layer base`, and the token blocks must
+// not be. Unlayered declarations outrank EVERY layered one — layer order is
+// compared before specificity — so an unlayered `body { font-weight: 300 }`
+// defeated Tailwind's font-bold, bg-white, text-2xl and m-4 utilities at once.
+// The layer name must be exactly `base`: Tailwind declares
+// `@layer theme, base, components, utilities`, and an unrecognised name is
+// appended after utilities, which changes nothing.
+const layerAt = code.indexOf('@layer base {');
+if (check(layerAt !== -1, 'achroma.css declares no `@layer base {` — the base rules are unlayered and outrank every Tailwind utility')) {
+  let depth = 0;
+  let end = layerAt;
+  for (let i = code.indexOf('{', layerAt); i < code.length; i++) {
+    if (code[i] === '{') depth++;
+    else if (code[i] === '}' && --depth === 0) { end = i; break; }
+  }
+  const layered = code.slice(layerAt, end);
+  const outside = code.slice(0, layerAt) + code.slice(end);
+  for (const sel of ['body', '.grain', '.label', ':focus-visible', 'h1']) {
+    check(
+      new RegExp(`(^|[,{}\\s])${sel.replace(/[.:]/g, (c) => `\\${c}`)}\\s*[,{]`, 'm').test(layered),
+      `the \`${sel}\` rule is not inside @layer base — unlayered, it beats every ` +
+        `layered utility a consumer writes.`,
+    );
+  }
+  check(
+    !/--n-0\s*:/.test(layered),
+    'the ramp is inside @layer base. Token blocks belong unlayered, so a ' +
+      'consumer can override them without layer machinery.',
+  );
+  check(
+    /--n-0\s*:/.test(outside),
+    'the ramp is not outside @layer base — token blocks must stay unlayered.',
+  );
+}
+
+// ── 7. contrast ───────────────────────────────────────────────────────
 for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...dark])]]) {
   console.log(`\n${mode}`);
   for (const [fg, bg, min] of TARGETS) {

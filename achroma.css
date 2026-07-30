@@ -9,14 +9,33 @@
  *      modes. test/contrast.mjs fails if that stops being true, because a stray
  *      0.01 is invisible by eye and would reach every site that installs this.
  *
- *   2. Aliases are what flip. Dark mode re-points 17 aliases at different ramp
+ *   2. Aliases are what flip. Each mode re-points 18 aliases at different ramp
  *      steps — it is not a second palette to keep in sync.
  *
  * Colour is never decoration. It appears only in --danger/--warn/--ok, and it
  * never governs content a user chose or a document contains.
  *
- * The @achroma marker comments are parsed by test/contrast.mjs. Do not remove
- * them, and keep all component CSS after the last one.
+ * Cascade, which is as load-bearing as the values and far easier to get wrong:
+ *
+ *   - The four alias blocks are all specificity 0,1,0 so that source order
+ *     decides, and a consumer's own `.dark {}` — written after this file —
+ *     always wins. An earlier draft used `:root:not([data-theme='light'])`
+ *     (0,3,0) and silently beat consumer overrides, but only when the OS was
+ *     in dark mode, which is the worst possible way to be wrong.
+ *   - Token blocks are deliberately UNLAYERED; the base rules live in
+ *     `@layer base`. Unlayered declarations outrank every layered one, so an
+ *     unlayered `body { font-weight }` would defeat all of Tailwind's
+ *     utilities. The layer must be named exactly `base` to land in Tailwind's
+ *     `@layer theme, base, components, utilities` order.
+ *
+ * The @achroma marker comments are parsed by test/contrast.mjs — four of them,
+ * one per alias block. Do not remove them, and keep all component CSS after the
+ * last one.
+ *
+ * "Chroma is exactly 0" is a SOURCE-level guarantee. A minifier targeting old
+ * browsers rewrites the ramp out of oklch() entirely (Lightning CSS at
+ * `defaults` emits `lab(96.288% -.0000298023 0)`), so package.json pins a
+ * browserslist modern enough that oklch() passes through untouched.
  */
 
 /* ── fonts ────────────────────────────────────────────────────────────
@@ -28,9 +47,23 @@
  * order on the mono is easy to reverse, and getting it wrong falls back to the
  * system monospace silently.
  *
- * Geist covers latin, latin-ext and cyrillic. It does NOT cover Devanagari,
- * Arabic, Greek, Korean, Tamil, Telugu or Thai; the fallback chain on
- * --font-mono is what handles those, per-glyph.
+ * Coverage is latin, latin-ext and cyrillic, and nothing else. Two consequences
+ * worth stating plainly rather than discovering:
+ *
+ *   - Vietnamese precomposed forms (U+1EC7, U+1EBF, …) and box-drawing glyphs
+ *     (U+250C, …) are in no declared range. They fall back per-glyph, so
+ *     `Việt` renders V-i-t in Geist with ệ from the system sans — a font
+ *     change MID-WORD. Fontsource ships `vietnamese` and `symbols2` subsets if
+ *     that becomes a problem; this package deliberately does not vendor them.
+ *   - Devanagari, Arabic, Greek, Korean, Tamil, Telugu and Thai are likewise
+ *     uncovered, and the fallback chains on --font-sans/--font-mono handle
+ *     them per-glyph.
+ *
+ * Rule ORDER matters and is Fontsource's, not alphabetical: cyrillic, then
+ * latin-ext, then latin. The ranges overlap — U+0304/U+0308/U+0329 appear in
+ * both latin and latin-ext, and where ranges overlap the LAST matching rule
+ * wins. Declared latin-first, any NFD text containing U+0301 pulled the whole
+ * cyrillic subset onto a Latin page. Do not reorder these.
  */
 
 @font-face {
@@ -38,10 +71,8 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('./fonts/geist-latin-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('./fonts/geist-cyrillic-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 @font-face {
@@ -60,8 +91,10 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('./fonts/geist-cyrillic-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  src: url('./fonts/geist-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -69,10 +102,8 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('./fonts/geist-mono-latin-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('./fonts/geist-mono-cyrillic-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 @font-face {
@@ -91,8 +122,10 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('./fonts/geist-mono-cyrillic-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  src: url('./fonts/geist-mono-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* @achroma light */
@@ -131,6 +164,7 @@
   --fg-faint: var(--n-500);
   --hairline: var(--n-150);
   --rule: var(--n-300);
+  --ring: var(--fg);
 
   /* ── semantics — the only colour in the system ─────────────────────
    *
@@ -216,8 +250,13 @@
 }
 
 /* @achroma dark */
+/* The :not() arguments are wrapped in :where() to hold this at 0,1,0. Without
+ * it, :not() contributes its most specific argument and the selector is 0,3,0 —
+ * which outranks a consumer's own `.dark {}` (0,1,0) and reverts their override,
+ * but ONLY when the OS is set to dark. Measured before the fix: a consumer
+ * setting --bg on .dark got their value under OS-light and ours under OS-dark. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']):not(.light) {
+  :root:not(:where([data-theme='light'], .light)) {
     --bg: var(--n-900);
     --bg-raised: var(--n-850);
     --bg-sunken: var(--n-950);
@@ -226,6 +265,7 @@
     --fg-faint: var(--n-500);
     --hairline: var(--n-800);
     --rule: var(--n-700);
+    --ring: var(--fg);
     --danger-text: oklch(0.72 0.16 25);
     --danger-line: oklch(0.53 0.15 27);
     --danger-bg: oklch(0.240 0.045 27);
@@ -243,8 +283,12 @@
 /* Written twice on purpose. The media query serves consumers that follow the
  * OS; the class serves consumers with a toggle (next-themes sets .dark).
  * test/contrast.mjs asserts the two blocks are declaration-identical, because
- * nothing else would catch them drifting. */
-:root[data-theme='dark'],
+ * nothing else would catch them drifting.
+ *
+ * No `:root` prefix: `[data-theme='dark']` alone is 0,1,0, so this ties with a
+ * consumer's own rule and source order — their file comes after ours — decides.
+ * It also lets the class work on any element, not only <html>. */
+[data-theme='dark'],
 .dark {
   color-scheme: dark;
   --bg: var(--n-900);
@@ -255,6 +299,7 @@
   --fg-faint: var(--n-500);
   --hairline: var(--n-800);
   --rule: var(--n-700);
+  --ring: var(--fg);
   --danger-text: oklch(0.72 0.16 25);
   --danger-line: oklch(0.53 0.15 27);
   --danger-bg: oklch(0.240 0.045 27);
@@ -267,79 +312,180 @@
   --grain-opacity: 0.035;
 }
 
+/* @achroma light-class */
+/* The light counterpart, and it must exist for two reasons that both bite only
+ * when the OS is dark:
+ *
+ *   1. `color-scheme: light dark` on :root resolves to DARK under OS-dark no
+ *      matter which tokens won, so form controls and scrollbars rendered dark
+ *      on a near-white page — measured, an <input> at rgb(59,59,59) with white
+ *      text on oklch(0.985 0 0). Only `color-scheme: light` pins it.
+ *   2. The dark media query's :not() merely SUPPRESSES itself on a light-themed
+ *      root; nothing declared light tokens. `<body class="light">` under
+ *      OS-dark therefore inherited the dark --bg from :root.
+ *
+ * Last of the four blocks so that source order favours it if both a light and
+ * a dark marker somehow end up on the same element. */
+[data-theme='light'],
+.light {
+  color-scheme: light;
+  --bg: var(--n-25);
+  --bg-raised: var(--n-0);
+  --bg-sunken: var(--n-50);
+  --fg: var(--n-950);
+  --fg-dim: var(--n-600);
+  --fg-faint: var(--n-500);
+  --hairline: var(--n-150);
+  --rule: var(--n-300);
+  --ring: var(--fg);
+  --danger-text: oklch(0.50 0.19 27);
+  --danger-line: oklch(0.62 0.17 27);
+  --danger-bg: oklch(0.965 0.015 27);
+  --warn-text: oklch(0.48 0.10 75);
+  --warn-line: oklch(0.62 0.12 78);
+  --warn-bg: oklch(0.968 0.022 85);
+  --ok-text: oklch(0.48 0.12 150);
+  --ok-line: oklch(0.58 0.12 150);
+  --ok-bg: oklch(0.965 0.018 150);
+  --grain-opacity: 0.025;
+}
+
 /* ── base ─────────────────────────────────────────────────────────────
  *
  * Deliberately small. An opinionated reset in a shared package fights each
  * consumer's own base styles, so this sets only what the token system needs
  * to be true.
+ *
+ * `@layer base`, and the name is not negotiable. Unlayered declarations outrank
+ * every layered one — layer order is compared before specificity — so an
+ * unlayered `body { font-weight: 300 }` beat Tailwind's `font-bold` utility,
+ * and `m-4`, `bg-white` and `text-2xl` with it. `base` is a name Tailwind
+ * already declares in `@layer theme, base, components, utilities`; an
+ * unrecognised name like `achroma.base` is appended AFTER utilities and fixes
+ * nothing. Verified both ways.
+ *
+ * The :root token blocks above stay unlayered on purpose: they define custom
+ * properties, which no utility competes for, and unlayered means a consumer
+ * needs no layer machinery to override them.
  */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: var(--w-light);
+    line-height: var(--lh-body);
+  }
+
+  /* Set explicitly because the two consumers disagree otherwise: the UA sheet
+   * makes headings bold, while Tailwind's preflight resets them to
+   * font-weight: inherit — so the same file rendered h1 at 700 in a plain page
+   * and 300 in a Tailwind one. The huge-and-thin display treatment is opt-in
+   * through --text-display/--track-display, not an h1 default.
+   *
+   * IMPORT ORDER, and it is a real constraint: Tailwind's preflight puts its
+   * own `h1…h6 { font-weight: inherit }` and `b, strong { font-weight: bolder }`
+   * in `@layer base` too, and within one layer the LAST rule wins. Import
+   * achroma after Tailwind:
+   *
+   *     @import "tailwindcss";
+   *     @import "achroma/achroma.css";   <- this order
+   *
+   * Measured the other way round (achroma first), preflight wins and h1 falls
+   * back to the inherited 300 with strong at 400 — the exact bug these two
+   * rules exist to remove.
+   *
+   * Note also that heading font-SIZE is deliberately not set here, so a plain
+   * consumer keeps the UA's 2em h1 (30px) while a Tailwind consumer gets
+   * preflight's `font-size: inherit` (15px). Size is the consumer's call
+   * through the --text-* scale; only weight and metrics are pinned. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: var(--w-medium);
+    letter-spacing: var(--track-tight);
+    line-height: var(--lh-tight);
+  }
+
+  /* The UA's `bolder` maps an inherited 300 to 400 — a 100-unit step, where
+   * emphasis normally gets 300. Nearly imperceptible, so name the weight. */
+  strong,
+  b {
+    font-weight: var(--w-medium);
+  }
+
+  /* --ring rather than --fg directly, so an inverted surface can flip the ring
+   * in one declaration: `.inverted { --ring: var(--bg) }`.
+   *
+   * Escape hatch: outline-offset puts the ring 4px outside the border box and
+   * outlines are clipped by an ancestor's overflow clip, so a full-width item
+   * inside `overflow: hidden` loses its ring on the left and right edges —
+   * shadcn's DropdownMenuItem, SelectItem, CommandItem and Card are all this
+   * shape. Set `outline-offset: -2px` on those to draw the ring inside. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* ── the grain overlay ──────────────────────────────────────────────
+   *
+   * One fixed element, no JavaScript. This is what makes an achromatic
+   * surface read as material rather than flat — the single highest-leverage
+   * detail in the system.
+   *
+   * The data URI stays inline here and uses the comma form on purpose. Moving
+   * it into a custom property, or switching to the ;base64 or ;utf8 form,
+   * would truncate it at the semicolon when test/contrast.mjs parses this
+   * file — with no error, just a grain that quietly stops working. That rule
+   * is enforced by assertions now, not only by this comment.
+   *
+   * Usage: <div class="grain" aria-hidden="true"></div> as the last child of
+   * body.
+   */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-repeat: repeat;
+    background-size: 180px 180px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ── the micro-label ────────────────────────────────────────────────
+   *
+   * The other half of the type signature: tiny, wide, uppercase, mono.
+   */
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: var(--w-medium);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--fg-faint);
+  }
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  font-weight: var(--w-light);
-  line-height: var(--lh-body);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-:focus-visible {
-  outline: 2px solid var(--fg);
-  outline-offset: 2px;
-}
-
-/* ── the grain overlay ────────────────────────────────────────────────
- *
- * One fixed element, no JavaScript. This is what makes an achromatic surface
- * read as material rather than flat — the single highest-leverage detail in
- * the system.
- *
- * The data URI stays inline here and uses the comma form on purpose. Moving
- * it into a custom property, or switching to the ;base64 or ;utf8 form, would
- * truncate it at the semicolon when test/contrast.mjs parses this file — with
- * no error, just a grain that quietly stops working.
- *
- * Usage: <div class="grain" aria-hidden="true"></div> as the last child of
- * body.
- */
-
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  opacity: var(--grain-opacity);
-  background-repeat: repeat;
-  background-size: 180px 180px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ── the micro-label ──────────────────────────────────────────────────
- *
- * The other half of the type signature: tiny, wide, uppercase, mono.
- */
-
-.label {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  font-weight: var(--w-medium);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--fg-faint);
-}
+/* The queries below stay unlayered: they are user-preference overrides, and
+ * unlayered normal declarations outrank layered ones, so they reach consumers
+ * without needing to know about our layer. */
 
 @media (prefers-reduced-motion: reduce) {
   :root {
@@ -350,15 +496,37 @@ body {
     --stagger: 0ms;
   }
 
+  /* Both halves are needed: the tokens only reach CSS that consumes them, and
+   * the universal reset catches third-party and Radix animations that never
+   * heard of them. scroll-behavior goes on * rather than html so it reaches
+   * nested scroll containers too.
+   *
+   * Deliberately NOT animation-iteration-count: 1 — that runs a
+   * `spin 1s infinite` loading indicator for one 0.01ms iteration and freezes
+   * it on its final frame, leaving a reduced-motion user unable to tell
+   * "loading" from "hung". Non-decorative progress indicators are the standard
+   * carve-out from reduced motion; removing the duration is enough. */
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
 
+/* Not under prefers-reduced-motion: the grain is a static SVG background with
+ * no animation, transition or transform, and "Reduce motion" is widely enabled
+ * for battery reasons. Hiding it there cost those users the system's headline
+ * detail for no motion benefit. These two queries are the ones that actually
+ * mean "less visual noise". */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .grain {
+    display: none;
+  }
+}
+
+@media print {
   .grain {
     display: none;
   }

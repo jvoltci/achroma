@@ -19,6 +19,7 @@
   },
   "files": ["achroma.css", "achroma.tailwind.css", "fonts", "NOTICE"],
   "sideEffects": ["*.css"],
+  "browserslist": ["chrome >= 111", "safari >= 16.4", "firefox >= 113"],
   "dependencies": {},
   "scripts": {
     "test": "node test/oklch.test.mjs && node test/contrast.mjs"
