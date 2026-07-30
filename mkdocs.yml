@@ -1,0 +1,84 @@
+site_name: achroma
+site_description: An achromatic design system. Black, white and greys, with hue reserved for meaning. Zero dependencies, plain CSS custom properties.
+site_url: https://jvoltci.github.io/achroma/doc/
+repo_url: https://github.com/jvoltci/achroma
+repo_name: jvoltci/achroma
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: grey
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: grey
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+
+  # `accent: grey`, not the sibling project's blue. This package forbids
+  # decorative hue and reserves colour for --danger/--warn/--ok; documenting that
+  # on a blue-accented site would contradict the rule on the page that states it.
+  #
+  # `font: false` disables mkdocs-material's Google Fonts entirely. achroma
+  # self-hosts Geist precisely so consumers keep working offline, and fetching a
+  # CDN webfont to document that decision would break the claim being documented.
+  # docs/assets/extra.css declares the vendored .woff2 files instead and
+  # re-points --md-text-font / --md-code-font at them.
+  font: false
+
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+nav:
+  - Start here:
+      - Overview: index.md
+      - Tokens: tokens.md
+  - Use it:
+      - Dark mode: dark-mode.md
+      - Tailwind and shadcn: tailwind.md
+      - Recipes: recipes.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jvoltci/achroma
+
+extra_css:
+  - assets/extra.css

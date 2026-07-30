@@ -1,0 +1,53 @@
+/* Vendored Geist for the docs site, because mkdocs.yml sets `font: false`.
+ *
+ * The theme's own font chain is `var(--md-text-font, _), -apple-system, …`, so
+ * setting --md-text-font / --md-code-font is the whole hook. Nothing else here
+ * restyles the theme.
+ *
+ * ── the font path, which is the one thing to get right ────────────────
+ *
+ * `../../fonts/`, not `../fonts/`.
+ *
+ * mkdocs copies docs/assets/extra.css to <site_dir>/assets/extra.css, and the
+ * site is published under /achroma/doc/ — so this file is served from
+ * /achroma/doc/assets/extra.css. A url() resolves against the STYLESHEET's URL,
+ * not the document's, so:
+ *
+ *   ../fonts/     ->  /achroma/doc/fonts/    nothing is there: 404, silent
+ *                                            fallback to the system sans
+ *   ../../fonts/  ->  /achroma/fonts/        where deploy-web.yml already puts
+ *                                            them (`cp fonts/*.woff2
+ *                                            _site/fonts/`)
+ *
+ * So no extra copy step is needed. The failure mode of getting this wrong is a
+ * 404 in the network log and docs rendered in the system font — the site still
+ * loads, which is why it would go unnoticed.
+ *
+ * This path targets the DEPLOYED layout, so `mkdocs serve` 404s the two fonts:
+ * its root is the docs alone and there is no /fonts/ beside them. Expected, and
+ * the only cost is that local previews use the fallback sans.
+ *
+ * Only the latin subsets are declared. These pages are English; anything outside
+ * that coverage falls back per glyph, exactly as achroma.css describes.
+ */
+
+@font-face {
+  font-family: 'Geist Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../../fonts/geist-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Geist Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../../fonts/geist-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+  --md-text-font: 'Geist Variable';
+  --md-code-font: 'Geist Mono Variable';
+}
