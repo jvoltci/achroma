@@ -22,6 +22,7 @@
   "browserslist": ["chrome >= 111", "safari >= 16.4", "firefox >= 113"],
   "dependencies": {},
   "scripts": {
-    "test": "node test/oklch.test.mjs && node test/contrast.mjs"
+    "test": "node test/oklch.test.mjs && node test/contrast.mjs",
+    "test:cascade": "node test/cascade.mjs"
   }
 }

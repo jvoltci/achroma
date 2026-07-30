@@ -60,10 +60,33 @@
  *     them per-glyph.
  *
  * Rule ORDER matters and is Fontsource's, not alphabetical: cyrillic, then
- * latin-ext, then latin. The ranges overlap — U+0304/U+0308/U+0329 appear in
- * both latin and latin-ext, and where ranges overlap the LAST matching rule
- * wins. Declared latin-first, any NFD text containing U+0301 pulled the whole
- * cyrillic subset onto a Latin page. Do not reorder these.
+ * latin-ext, then latin. U+0304, U+0308 and U+0329 are declared by BOTH the
+ * latin and latin-ext ranges, and where ranges overlap the LAST matching rule
+ * wins — so latin must come last. Do not reorder these.
+ *
+ * What that order does and does not buy, measured in Chrome 150 off the network
+ * log, one subset per row unless stated:
+ *
+ *   text contains              latin-first (before)   latin-last (now)
+ *   -------------------------  ---------------------  ----------------
+ *   plain ASCII                latin                  latin
+ *   U+0304 combining macron    latin + latin-ext      latin
+ *   U+0308 combining diaeresis latin + latin-ext      latin
+ *   U+0329 combining v. line   latin + latin-ext      latin + latin-ext
+ *   U+0301 combining acute     cyrillic + latin       cyrillic + latin
+ *   precomposed U+00E9         latin                  latin
+ *   precomposed U+0113         latin + latin-ext      latin + latin-ext
+ *
+ * So the reorder removes a redundant latin-ext fetch for U+0304 and U+0308, and
+ * changes nothing else. Two facts worth stating rather than rediscovering:
+ *
+ *   - U+0301 is declared ONLY by the cyrillic range, so any NFD text still
+ *     pulls the ~15 KB cyrillic subset. Fixing that would mean editing a
+ *     unicode-range to drop U+0301 from cyrillic, which would break Ukrainian
+ *     stress marks — a worse trade, so it stands.
+ *   - U+0329 still fetches latin-ext even though latin declares it and is
+ *     matched last. The reason was not established; the fonts were not
+ *     decompressed to check their glyph coverage. Recorded as an observation.
  */
 
 @font-face {
@@ -370,6 +393,30 @@
  */
 
 @layer base {
+  /* ══════════════════════════════════════════════════════════════════
+   * IMPORT ORDER: Tailwind FIRST, achroma SECOND.
+   * ══════════════════════════════════════════════════════════════════
+   *
+   *     @import "tailwindcss";
+   *     @import "achroma/achroma.css";     <- must come second
+   *
+   * Tailwind's preflight puts its own `h1…h6 { font-size: inherit;
+   * font-weight: inherit }` and `b, strong { font-weight: bolder }` in
+   * `@layer base` — the same layer as the rules below. Within one layer,
+   * specificity ties are broken by SOURCE ORDER, and `h1` versus `h1` is a
+   * tie. So whichever file is imported last wins.
+   *
+   * Get it backwards and it FAILS SILENTLY. Nothing errors, no build warning:
+   * headings simply render at the inherited body weight of 300, and <strong>
+   * at 400, because preflight's `inherit`/`bolder` overwrote the weights.
+   * Measured, achroma imported first: h1 300 instead of 500, strong 400
+   * instead of 500, h1 15px instead of 30px.
+   *
+   * These rules deliberately use plain `h1`, not `:root h1` — a consumer must
+   * be able to override headings from their own `@layer base`, and outranking
+   * them would be a worse bug than the one it prevents.
+   * ══════════════════════════════════════════════════════════════════ */
+
   *,
   *::before,
   *::after {
@@ -390,28 +437,18 @@
     line-height: var(--lh-body);
   }
 
-  /* Set explicitly because the two consumers disagree otherwise: the UA sheet
-   * makes headings bold, while Tailwind's preflight resets them to
-   * font-weight: inherit — so the same file rendered h1 at 700 in a plain page
-   * and 300 in a Tailwind one. The huge-and-thin display treatment is opt-in
-   * through --text-display/--track-display, not an h1 default.
+  /* Headings are pinned — size, weight and metrics — because the two consumers
+   * disagree about every one of them otherwise. The UA sheet makes headings
+   * bold and h1 2em; Tailwind's preflight resets them to `font-size: inherit`
+   * and `font-weight: inherit`. Measured from this one file: h1 was 700/30px in
+   * a plain page and 300/15px in a Tailwind one.
    *
-   * IMPORT ORDER, and it is a real constraint: Tailwind's preflight puts its
-   * own `h1…h6 { font-weight: inherit }` and `b, strong { font-weight: bolder }`
-   * in `@layer base` too, and within one layer the LAST rule wins. Import
-   * achroma after Tailwind:
+   * Sizes map onto the existing --text-* scale, so there is one type scale and
+   * not two. Note h5 lands on --text-base (body size) and h6 below it: past h4
+   * a heading is a label, and weight plus tracking carry the hierarchy.
    *
-   *     @import "tailwindcss";
-   *     @import "achroma/achroma.css";   <- this order
-   *
-   * Measured the other way round (achroma first), preflight wins and h1 falls
-   * back to the inherited 300 with strong at 400 — the exact bug these two
-   * rules exist to remove.
-   *
-   * Note also that heading font-SIZE is deliberately not set here, so a plain
-   * consumer keeps the UA's 2em h1 (30px) while a Tailwind consumer gets
-   * preflight's `font-size: inherit` (15px). Size is the consumer's call
-   * through the --text-* scale; only weight and metrics are pinned. */
+   * The huge-and-thin display treatment stays opt-in through
+   * --text-display/--track-display; it is not an h1 default. */
   h1,
   h2,
   h3,
@@ -422,6 +459,13 @@
     letter-spacing: var(--track-tight);
     line-height: var(--lh-tight);
   }
+
+  h1 { font-size: var(--text-2xl); }
+  h2 { font-size: var(--text-xl); }
+  h3 { font-size: var(--text-lg); }
+  h4 { font-size: var(--text-md); }
+  h5 { font-size: var(--text-base); }
+  h6 { font-size: var(--text-sm); }
 
   /* The UA's `bolder` maps an inherited 300 to 400 — a 100-unit step, where
    * emphasis normally gets 300. Nearly imperceptible, so name the weight. */
