@@ -1,14 +1,17 @@
 // Asserts the things about achroma.css that cannot be seen by reading it.
 //
-// Five classes of check, in order of how quietly they would otherwise fail:
+// Six classes of check, in order of how quietly they would otherwise fail:
 //
-//   1. chroma-zero    a stray 0.01 in the ramp is invisible by eye and would
+//   1. grain          a data URI moved into a custom property is truncated at
+//                     its first semicolon by this very parser — 93% of the
+//                     value gone, and every other check still green
+//   2. chroma-zero    a stray 0.01 in the ramp is invisible by eye and would
 //                     propagate to every site that installs this
-//   2. block parity   the dark values are written twice (media query + class)
+//   3. block parity   the dark values are written twice (media query + class)
 //                     and drift between the copies is undetectable by hand
-//   3. monotonicity   a ramp step out of order makes "one step darker" a lie
-//   4. gamut          an out-of-gamut hue reports a better ratio than it paints
-//   5. contrast       computed, never assumed
+//   4. monotonicity   a ramp step out of order makes "one step darker" a lie
+//   5. gamut          an out-of-gamut hue reports a better ratio than it paints
+//   6. contrast       computed, never assumed
 //
 // Prints every ratio whether it passes or not. A pass/fail line tells you less
 // than the numbers do.
@@ -180,7 +183,58 @@ for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...da
   }
 }
 
-// ── 5. contrast ───────────────────────────────────────────────────────
+// ── 5. the grain data URI survived this parser ─────────────────────────
+//
+// The grain overlay is the system's headline visual feature, and its inline data
+// URI is the one value in achroma.css that this file can destroy silently.
+// `decls()` ends a value at the first `;`, so `--grain-image:
+// url("data:image/svg+xml;base64,…")` is read as 23 of 349 characters — 93% gone
+// — while all 17 aliases still resolve and the run exits 0. Measured, not
+// assumed: that truncation was reproduced and it printed "all ramp assertions
+// passed".
+//
+// achroma.css states the rule in a comment. A comment is not enforcement, so the
+// three ways to break it are assertions now. Note that the fix is never to make
+// the parser tolerant — the value belongs inline, in the rule that uses it.
+//
+// Comments are stripped first, because achroma.css documents this rule in prose
+// that quotes the very strings being matched. Without the strip, commenting the
+// whole grain rule out satisfies all three assertions — verified, it did.
+const code = css.replace(/\/\*[\s\S]*?\*\//g, ' ');
+
+check(
+  /feTurbulence/.test(code),
+  'the grain is gone: no feTurbulence in achroma.css',
+);
+check(
+  code.includes('%3C/svg%3E'),
+  'the grain data URI has no closing %3C/svg%3E — a value cut at a semicolon ' +
+    'loses the end of the SVG first, so this is what truncation looks like',
+);
+check(
+  /\.grain\s*\{[^}]*background-image\s*:/.test(code),
+  '.grain declares no background-image — the overlay would paint nothing',
+);
+
+// Every custom property in the file, not only the ones between the markers: the
+// blind spot belongs to the regex, so it is file-wide.
+for (const [name, value] of decls(code)) {
+  check(
+    !value.includes('data:'),
+    `${name} holds a data URI. This parser stops a value at its first ';', so a ` +
+      `data URI in a custom property is truncated with no error at all — just a ` +
+      `dead image. Keep it inline in the rule that uses it.`,
+  );
+}
+
+check(
+  !code.includes('svg+xml;'),
+  "an svg+xml data URI uses the ';base64' or ';utf8' form — everything after " +
+    'that semicolon is invisible to this parser. Use the comma form instead: ' +
+    'url("data:image/svg+xml,%3Csvg …").',
+);
+
+// ── 6. contrast ───────────────────────────────────────────────────────
 for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...dark])]]) {
   console.log(`\n${mode}`);
   for (const [fg, bg, min] of TARGETS) {
