@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "An achromatic design system. Black, white and greys, with hue reserved for meaning. Zero dependencies, plain CSS custom properties.",
   "license": "Apache-2.0",
+  "author": "JAI <jvoltci@gmail.com> (https://github.com/jvoltci)",
   "type": "module",
+  "bugs": "https://github.com/jvoltci/achroma/issues",
   "keywords": ["design-system", "design-tokens", "css", "achromatic", "monochrome", "greyscale"],
   "repository": {
     "type": "git",
