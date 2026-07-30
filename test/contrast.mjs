@@ -42,7 +42,7 @@ const check = (ok, message) => {
   return ok;
 };
 
-/** The 21 aliases that must be defined in every mode. This list is the contract. */
+/** The 26 aliases that must be defined in every mode. This list is the contract. */
 const COLOUR_ALIASES = [
   '--bg', '--bg-raised', '--bg-sunken',
   '--fg', '--fg-dim', '--fg-faint',
@@ -51,6 +51,8 @@ const COLOUR_ALIASES = [
   '--warn-text', '--warn-line', '--warn-bg',
   '--ok-text', '--ok-line', '--ok-bg',
   '--info-text', '--info-line', '--info-bg',
+  '--accent-text', '--accent-line', '--accent-bg',
+  '--accent-fill', '--accent-on-fill',
 ];
 
 /**
@@ -95,6 +97,13 @@ const TARGETS = [
   ['--warn-text', '--warn-bg', 4.5],
   ['--ok-text', '--ok-bg', 4.5],
   ['--info-text', '--info-bg', 4.5],
+  ['--accent-text', '--bg', 4.5],
+  ['--accent-line', '--bg', 3.0],
+  ['--accent-text', '--accent-bg', 4.5],
+  // The filled primary button. Its own ink must be legible ON it, which is a
+  // requirement none of the status semantics have — they never carry text on a
+  // saturated fill.
+  ['--accent-on-fill', '--accent-fill', 4.5],
   ['--bg-raised', '--bg', 1.04],
   ['--bg-sunken', '--bg', 1.04],
 ];
@@ -286,7 +295,7 @@ for (const [aName, a, bName, b] of PARITY) {
 // pass — precisely the shape this file exists to prevent. The ramp cannot hit
 // this (chroma 0 and L in [0,1] always lands in gamut), which is why the check
 // is scoped to tokens that actually carry hue.
-const CHROMATIC = COLOUR_ALIASES.filter((n) => /^--(danger|warn|ok)-/.test(n));
+const CHROMATIC = COLOUR_ALIASES.filter((n) => /^--(danger|warn|ok|accent)-/.test(n));
 
 // The loop below skips a token it cannot resolve, which is only safe because
 // every chromatic token also has a contrast target — and there, an unresolvable
@@ -448,40 +457,57 @@ if (check(layerAt !== -1, 'achroma.css declares no `@layer base {` — the base 
 // no colour of its own. The second half matters because a literal in the bridge
 // would be a colour outside the ramp, invisible to every other check in this
 // file.
-{
-  const bridgePath = join(root, 'achroma.tailwind.css');
-  let bridge = null;
+//
+// Both optional files get the same treatment, because they fail the same way.
+// achroma.tailwind.css maps shadcn's names onto tokens; achroma.components.css
+// builds the nine essential primitives out of them. Neither declares a colour of
+// its own, so a renamed token in achroma.css silently empties a var() in both.
+//
+// A var() with a FALLBACK is skipped by the regex below, which is what lets
+// achroma.components.css define its own --ac-container and --ac-gap knobs without
+// tripping the check — they are always written `var(--ac-gap, var(--s-4))`, and the
+// inner token is still verified.
+for (const file of ['achroma.tailwind.css', 'achroma.components.css']) {
+  let text = null;
   try {
-    bridge = readFileSync(bridgePath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+    text = readFileSync(join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
   } catch {
-    // Not yet written. Absent is fine; broken is not.
+    continue; // Not yet written. Absent is fine; broken is not.
   }
 
-  if (bridge !== null) {
-    const defined = new Set([...code.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
-    const referenced = new Set(
-      [...bridge.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/g)].map((m) => m[1]),
+  const defined = new Set([...code.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+  const referenced = new Set([...text.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/g)].map((m) => m[1]));
+
+  check(referenced.size > 0, `${file} references no tokens at all`);
+
+  for (const name of referenced) {
+    check(
+      defined.has(name),
+      `${file} references ${name}, which achroma.css does not define. An ` +
+        `unresolved var() is the empty string, so the rule renders unstyled with ` +
+        `no error anywhere.`,
     );
+  }
 
-    check(referenced.size > 0, 'achroma.tailwind.css references no tokens at all');
+  for (const m of text.matchAll(/(oklch\(|rgba?\(|hsla?\(|#[0-9a-fA-F]{3,8})/g)) {
+    check(
+      false,
+      `${file} declares a literal colour (${m[1]}). These files must be pure ` +
+        `indirection — a literal here is a colour outside the ramp that no other ` +
+        `check in this file can see.`,
+    );
+  }
 
-    for (const name of referenced) {
-      check(
-        defined.has(name),
-        `achroma.tailwind.css references ${name}, which achroma.css does not define. ` +
-          `An unresolved var() is the empty string, so the component renders ` +
-          `unstyled with no error.`,
-      );
-    }
-
-    for (const m of bridge.matchAll(/(oklch\(|rgba?\(|hsla?\(|#[0-9a-fA-F]{3,8})/g)) {
-      check(
-        false,
-        `achroma.tailwind.css declares a literal colour (${m[1]}). The bridge must ` +
-          `be pure indirection — a literal here is a colour outside the ramp that ` +
-          `no other check in this file can see.`,
-      );
-    }
+  // The layer name is load-bearing in both files and wrong in different ways.
+  // Tailwind declares `theme, base, components, utilities`; an unrecognised name
+  // is appended AFTER utilities, so `.ac-btn` would beat `px-6` and utilities
+  // would stop working on our own components.
+  if (file === 'achroma.components.css') {
+    check(
+      /@layer\s+components\s*\{/.test(text),
+      `${file} does not open \`@layer components\`. Unlayered, every primitive in ` +
+        `it outranks every Tailwind utility a consumer writes.`,
+    );
   }
 }
 

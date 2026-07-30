@@ -9,11 +9,17 @@
  *      modes. test/contrast.mjs fails if that stops being true, because a stray
  *      0.01 is invisible by eye and would reach every site that installs this.
  *
- *   2. Aliases are what flip. Each mode re-points 18 aliases at different ramp
+ *   2. Aliases are what flip. Each mode re-points 26 aliases at different ramp
  *      steps — it is not a second palette to keep in sync.
  *
- * Colour is never decoration. It appears only in --danger/--warn/--ok, and it
- * never governs content a user chose or a document contains.
+ * Colour is never decoration, and there are exactly two kinds of it:
+ *
+ *   - STATUS, in --danger/--warn/--ok. What happened.
+ *   - AFFORDANCE, in --accent. What you can do.
+ *
+ * --info is the fourth status and it is deliberately achromatic: the state that
+ * says nothing is wrong does not earn a hue. Neither kind ever governs content a
+ * user chose or a document contains.
  *
  * Cascade, which is as load-bearing as the values and far easier to get wrong:
  *
@@ -241,6 +247,73 @@
   --info-line: var(--fg-faint);
   --info-bg: var(--bg-sunken);
 
+  /* ── accent — the one hue that is not a status ───────────────────────
+   *
+   * Indigo, hue 285. It marks AFFORDANCE: this is the thing you can act on.
+   *
+   * That is what keeps "colour is never decoration" true rather than bending it.
+   * danger, warn and ok say what happened; accent says what you can do. All four
+   * are meaning. A greyscale system has to carry "clickable" on weight and
+   * position alone, which is why almost every achromatic system quietly smuggles
+   * one accent back in — this one does it on the record.
+   *
+   * Hue 285 was chosen against three others on measured grounds, not taste
+   * alone. Max in-gamut chroma at the shipped L of 0.520:
+   *
+   *   indigo 285   0.200      <- chosen
+   *   magenta 340  0.196
+   *   blue 250     0.128
+   *   teal 200     0.077      <- sRGB has almost no chroma in the blue-green
+   *                              band at mid lightness, so teal can never be
+   *                              assertive here without losing legibility
+   *
+   * It also sits far from all three status hues — 285 against 27, 78 and 152 —
+   * so an accent border can never be misread as a warning.
+   *
+   * --accent-fill and --accent-on-fill do NOT flip between modes, and that is
+   * deliberate: white ink on this fill clears 4.5:1 on paper AND on ink, so one
+   * value serves both. They are still repeated in all four blocks, exactly as
+   * --fg-faint is for the same reason — the block is the contract.
+   *
+   * The chroma on each token is NOT a number anyone would pick by eye. It is
+   * whatever sRGB allows at that lightness and hue, times 0.86 for margin — and
+   * it drops fast as lightness rises. Two of the five were written wrong on the
+   * first pass and the gamut assertion caught both: dark --accent-text was 0.160
+   * and can only be 0.110 (blue channel 1.174), light --accent-bg was 0.020 and
+   * can only be 0.014. An out-of-gamut colour is clamped on its way to the screen
+   * and then reports a BETTER ratio than it paints, which is exactly the false
+   * pass this file exists to prevent. Do not raise a chroma here by hand.
+   *
+   * Dark --accent-text is at L 0.670, NOT up at 0.760 where the other dark
+   * semantics sit, and the reason is cohesion. Chroma and contrast pull opposite
+   * ways here, hard:
+   *
+   *   L      max chroma   ratio on dark --bg
+   *   0.670  0.157        6.11    <- shipped
+   *   0.760  0.110        8.69
+   *   0.840  0.071        11.55
+   *
+   * At 0.760 the text is a pale lavender sitting beside a vivid --accent-fill, and
+   * the accent reads as two different colours on one page. 0.670 buys 43% more
+   * chroma for contrast this system does not need — 6.11:1 still clears AA with
+   * room, and matches the light side's 6.26 almost exactly. Red and amber do not
+   * face this because sRGB is generous with chroma at high lightness in the warm
+   * hues and stingy in the blues.
+   *
+   *              light   dark
+   *   -text      6.26    6.11   (>= 4.5, on --bg)
+   *   -line      4.00    3.59   (>= 3.0, on --bg)
+   *   -text/-bg  5.91    5.36   (>= 4.5)
+   *   fill+ink   5.98    5.98   (>= 4.5, --accent-on-fill on --accent-fill)
+   *
+   * Use it for about 1-3% of the pixels on a page. An accent on everything is
+   * the same as no accent, and the greys are still the system. */
+  --accent-text: oklch(0.500 0.200 285);
+  --accent-line: oklch(0.600 0.170 285);
+  --accent-bg: oklch(0.966 0.014 285);
+  --accent-fill: oklch(0.520 0.200 285);
+  --accent-on-fill: oklch(1.000 0 0);
+
   /* ── elevation ──────────────────────────────────────────────────────
    *
    * Achromatic design gives up hue as a hierarchy channel, which leaves
@@ -456,6 +529,11 @@
     --info-text: var(--fg-dim);
     --info-line: var(--fg-faint);
     --info-bg: var(--bg-sunken);
+    --accent-text: oklch(0.670 0.157 285);
+    --accent-line: oklch(0.540 0.150 285);
+    --accent-bg: oklch(0.235 0.042 285);
+    --accent-fill: oklch(0.520 0.200 285);
+    --accent-on-fill: oklch(1.000 0 0);
     /* Alphas are ~11x light's, and that is measured, not nervousness: one ramp
      * step of darkening costs alpha 0.023 in light and 0.528 in dark. */
     --shadow-1: 0 1px 2px oklch(0 0 0 / 0.55);
@@ -510,6 +588,11 @@
   --info-text: var(--fg-dim);
   --info-line: var(--fg-faint);
   --info-bg: var(--bg-sunken);
+  --accent-text: oklch(0.670 0.157 285);
+  --accent-line: oklch(0.540 0.150 285);
+  --accent-bg: oklch(0.235 0.042 285);
+  --accent-fill: oklch(0.520 0.200 285);
+  --accent-on-fill: oklch(1.000 0 0);
   /* Alphas are ~11x light's, and that is measured, not nervousness: one ramp
    * step of darkening costs alpha 0.023 in light and 0.528 in dark. */
   --shadow-1: 0 1px 2px oklch(0 0 0 / 0.55);
@@ -568,6 +651,11 @@
   --info-text: var(--fg-dim);
   --info-line: var(--fg-faint);
   --info-bg: var(--bg-sunken);
+  --accent-text: oklch(0.500 0.200 285);
+  --accent-line: oklch(0.600 0.170 285);
+  --accent-bg: oklch(0.966 0.014 285);
+  --accent-fill: oklch(0.520 0.200 285);
+  --accent-on-fill: oklch(1.000 0 0);
   --shadow-1: 0 1px 2px oklch(0 0 0 / 0.05);
   --shadow-2:
     0 1px 2px oklch(0 0 0 / 0.04),
@@ -707,6 +795,90 @@
   strong,
   b {
     font-weight: var(--w-medium);
+  }
+
+  /* ── links, and the one hue this system was leaking ──────────────────
+   *
+   * The UA paints <a> rgb(0, 0, 238) and a:visited rgb(85, 26, 139). Two hues,
+   * on the most common inline element in HTML, in a file whose headline claim is
+   * that hue appears in four semantics and nowhere else. Measured, not assumed —
+   * every page with a link was breaking the thesis, and npm test could not see
+   * it because it reads tokens and never renders an element.
+   *
+   * `color: inherit` fixes :visited too, with no :visited rule of its own: author
+   * declarations beat the UA origin regardless of specificity, and origin is
+   * compared before either layers or specificity.
+   *
+   * The underline is NOT decoration here, it is the affordance. Take colour away
+   * as the link signal and something else has to carry it — that is WCAG 1.4.1,
+   * and it is the only thing that makes an achromatic link legitimate rather than
+   * merely quiet. So the underline is always on; only its weight changes on
+   * hover. `from-font` uses the metrics Geist ships instead of a browser guess.
+   */
+  a {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-thickness: from-font;
+    text-decoration-color: var(--fg-faint);
+    text-underline-offset: 0.15em;
+    transition: text-decoration-color var(--dur-1) var(--ease-out);
+  }
+
+  a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  /* Browsers do not inherit font on form controls, and the gap is not subtle.
+   * Measured under this file: <input>, <button> and <select> rendered Arial at
+   * 13.333px while body was Geist at --text-base, and <textarea> rendered
+   * monospace. The type system reached nothing a user types into.
+   *
+   * proof.html had been papering over this with `font: inherit` in its own
+   * <style>, which is the tell — the reference page had to repair the package to
+   * look right.
+   *
+   * The shorthand, not font-family alone: size, weight and line-height were all
+   * wrong too. Colour is deliberately left to the UA, because `color-scheme` is
+   * already set correctly for both modes and the cascade suite asserts a control
+   * paints dark on a dark surface. Overriding it here would replace a working
+   * mechanism with a second one to keep in sync. */
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  /* --font-mono exists and no element was using it. 0.9375em because a monospace
+   * face at an identical px size reads visibly larger than the sans beside it;
+   * em keeps the correction relative to whatever context the code sits in. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.9375em;
+  }
+
+  /* The UA's inset border renders rgb(128, 128, 128) — a mid grey off the ramp,
+   * and the wrong weight in both modes. Margin is left alone: that is layout. */
+  hr {
+    border: 0;
+    border-top: var(--line-1) solid var(--hairline);
+  }
+
+  /* Selection was the last hue leak, and the least obvious: it comes from the OS
+   * accent colour, so it is whatever blue or pink the user happens to have set in
+   * System Settings, and it differs machine to machine.
+   *
+   * It gets --accent-fill rather than an inverted --fg, and this is the single
+   * highest-leverage place the accent appears. A visitor triggers it by reflex,
+   * dozens of times a session, on every page — no other element gets that much
+   * unprompted attention for so little ink. --accent-on-fill on --accent-fill is
+   * already asserted at 5.98:1, so the selected text stays legible. */
+  ::selection {
+    background: var(--accent-fill);
+    color: var(--accent-on-fill);
   }
 
   /* --ring rather than --fg directly, so an inverted surface can flip the ring

@@ -61,12 +61,12 @@ because otherwise "one step darker" is a lie the aliases are built on.
     do not tighten a limit to 3.48 on the strength of a computed 3.4711 — a
     third-party checker reading 3.49 would disagree with you.
 
-## The 21 aliases — what a mode change actually does
+## The 26 aliases — what a mode change actually does
 
 A mode change re-points these and touches nothing else. Twelve are neutral: the
 nine structural ones below, plus the three `--info-*` tokens listed under
-[Semantics](#semantics-the-only-colour-in-the-system). The remaining nine carry
-hue and are listed there too.
+[Semantics](#semantics-the-only-colour-in-the-system). Nine carry status hue, and
+five more are the [accent](#accent-the-one-hue-that-is-not-a-status).
 
 | Alias | Light | Dark | What it is for | Asserted target | Light | Dark |
 |---|---|---|---|---|---|---|
@@ -259,6 +259,83 @@ an ellipse, which is wrong for a pill-shaped badge or a switch track; a large
 length clamps to a semicircle on the short axis at any aspect ratio. It is also not
 `calc(infinity * 1px)`, which is cleaner but outside this package's browserslist
 floor — the two are indistinguishable below about 2000px.
+
+## Accent — the one hue that is not a status
+
+`--danger`, `--warn` and `--ok` say what happened. `--accent` says what you can do,
+and that is why it is colour rather than decoration: a fully achromatic page reads
+muted because affordance has nowhere to go, leaving weight and position to carry it
+alone.
+
+Indigo, hue 285, chosen against three alternatives on measured grounds. Max in-gamut
+chroma at the shipped lightness of `0.520`:
+
+| Hue | Chroma at `L=0.520` | |
+|---|---|---|
+| indigo 285 | **0.200** | shipped |
+| magenta 340 | 0.196 | reads consumer/fashion in light mode |
+| blue 250 | 0.128 | already Vercel's, Stripe's and Things' |
+| teal 200 | 0.077 | sRGB has almost no chroma in blue-green at mid lightness |
+
+285 also sits far from all three status hues — 27, 78 and 152 — so an accent border
+can never be misread as a warning.
+
+| Token | Light | Dark | On `--bg` (light / dark) |
+|---|---|---|---|
+| `--accent-text` | `oklch(0.500 0.200 285)` | `oklch(0.670 0.157 285)` | 6.26:1 / 6.11:1 (≥ 4.5) |
+| `--accent-line` | `oklch(0.600 0.170 285)` | `oklch(0.540 0.150 285)` | 4.00:1 / 3.59:1 (≥ 3.0) |
+| `--accent-bg` | `oklch(0.966 0.014 285)` | `oklch(0.235 0.042 285)` | carries `-text` at 5.91 / 5.36 |
+| `--accent-fill` | `oklch(0.520 0.200 285)` | *same* | white ink at 5.98:1 |
+| `--accent-on-fill` | `oklch(1.000 0 0)` | *same* | — |
+
+### Two tokens deliberately do not flip
+
+`--accent-fill` and `--accent-on-fill` are identical in both modes, because white
+ink on that fill clears 4.5:1 on paper **and** on ink. They are still written out in
+all four blocks, exactly as `--fg-faint` is — the block is the contract.
+
+### Dark `-text` sits lower than the other dark semantics, on purpose
+
+The other dark semantics live at `L` 0.72–0.82. `--accent-text` is at 0.670, because
+chroma and contrast pull hard against each other for indigo:
+
+| `L` | Max chroma | Ratio on dark `--bg` |
+|---|---|---|
+| 0.670 | 0.157 | 6.11 |
+| 0.760 | 0.110 | 8.69 |
+| 0.840 | 0.071 | 11.55 |
+
+At 0.760 the text is a pale lavender sitting beside a vivid `--accent-fill`, and the
+accent reads as *two* colours on one page. 0.670 buys 43% more chroma for contrast
+this system does not need, and matches the light side's 6.26 almost exactly. Red and
+amber never face this: sRGB is generous with chroma at high lightness in the warm
+hues and stingy in the blues.
+
+### Chroma is never chosen by eye
+
+Every chroma above is whatever sRGB allows at that lightness and hue, times 0.86 for
+margin — and it falls away fast as lightness rises. Two of the five were written
+wrong on the first pass and the gamut assertion caught both: dark `--accent-text`
+was `0.160` and can only be `0.110` at `L=0.760` (blue channel 1.174), light
+`--accent-bg` was `0.020` and can only be `0.014`.
+
+An out-of-gamut colour is clamped on its way to the screen and then reports a
+*better* ratio than it paints. **Do not raise a chroma here by hand.**
+
+### Where to spend it
+
+1–3% of the pixels. The greys are still the system, and an accent on everything is
+the same as no accent.
+
+`::selection` is the highest-leverage place it appears — a visitor triggers it by
+reflex, dozens of times a session, on every page. Nothing else gets that much
+unprompted attention for so little ink.
+
+Want no hue at all? One line puts the ink button back:
+
+```css
+:root { --color-primary: var(--fg); --color-primary-foreground: var(--bg) }
+```
 
 ## Elevation
 

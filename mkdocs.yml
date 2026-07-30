@@ -80,6 +80,7 @@ nav:
       - Overview: index.md
       - Tokens: tokens.md
   - Use it:
+      - Components: components.md
       - Dark mode: dark-mode.md
       - Tailwind and shadcn: tailwind.md
       - Recipes: recipes.md

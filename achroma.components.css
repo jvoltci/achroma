@@ -1,0 +1,468 @@
+/* Achroma components — the essentials, and deliberately nothing more.
+ *
+ *     @import 'achroma/achroma.css';
+ *     @import 'achroma/achroma.components.css';
+ *
+ * A SEPARATE FILE, for the same reason the Tailwind bridge is one. achroma.css is
+ * a token spine and its whole value is that it fights nobody: a shadcn or MUI
+ * consumer wants the tokens and already owns their components. Putting buttons and
+ * tables in there would force that CSS on everyone to serve the plain-HTML case.
+ * So: opt in, or ignore this file entirely and consume the tokens.
+ *
+ * `@layer components`, and the name matters exactly as much as `base` does in
+ * achroma.css. Tailwind declares `@layer theme, base, components, utilities`, so
+ * `components` lands BELOW utilities — which is the correct direction: `px-6` must
+ * beat `.ac-btn`'s padding, or utilities are useless on our components. An
+ * unrecognised layer name would be appended after utilities and silently invert
+ * that.
+ *
+ * WHAT IS NOT HERE, and will not be added speculatively: dialog, dropdown, tabs,
+ * tooltip, accordion, popover, toast. Every one of them needs focus trapping,
+ * ARIA wiring and keyboard handling to be correct, and CSS alone produces a
+ * component that looks right and is unusable with a keyboard. Use Radix or
+ * shadcn for those and let the tokens style them — the bridge exists for this.
+ *
+ * Nine primitives, and the accent appears in five of them. That is not decoration
+ * creep: a purely achromatic page reads muted because "you can act on this" has
+ * nowhere to go. Buttons, links, badges, blockquote rails and meters are exactly
+ * where affordance lives.
+ */
+
+@layer components {
+  /* ── buttons ─────────────────────────────────────────────────────────
+   *
+   * `line-height: 1` is not a style choice. `font: inherit` pulls --lh-body of
+   * 1.6 out of body, which makes a button roughly 40% taller than its padding
+   * implies and misaligns it against any input beside it. Padding sets the height.
+   *
+   * `text-decoration: none` is required now that achroma.css underlines every
+   * <a>. Without it, `<a class="ac-btn">` renders a button with an underline
+   * through it — and using an anchor as a button is the common case, not the edge
+   * one, because a button that navigates should be an anchor.
+   */
+  .ac-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    line-height: 1;
+    padding: var(--s-3) var(--s-4);
+    border: var(--line-1) solid var(--rule);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--fg-dim);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out),
+      box-shadow var(--dur-1) var(--ease-out);
+  }
+
+  .ac-btn:hover {
+    color: var(--fg);
+    border-color: var(--fg);
+  }
+
+  /* Both states, because :disabled does not match an <a class="ac-btn"> and
+   * [disabled] does not match a <button> styled by a framework that uses
+   * aria-disabled. Covering all three is cheaper than debugging which one a
+   * component library chose. */
+  .ac-btn:disabled,
+  .ac-btn[disabled],
+  .ac-btn[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: var(--fg-dim);
+    border-color: var(--rule);
+  }
+
+  /* The primary action, and the only place a large block of hue belongs. Hover
+   * escalates the SHADOW rather than darkening the fill: there is no
+   * --accent-fill-hover token, and inventing one means a second measured value
+   * per mode. One elevation step reads as "this lifts toward you" and costs
+   * nothing. */
+  .ac-btn-fill {
+    background: var(--accent-fill);
+    border-color: var(--accent-fill);
+    color: var(--accent-on-fill);
+    font-weight: var(--w-medium);
+    box-shadow: var(--shadow-1);
+  }
+
+  .ac-btn-fill:hover {
+    color: var(--accent-on-fill);
+    border-color: var(--accent-fill);
+    box-shadow: var(--shadow-2);
+  }
+
+  /* The original achromatic filled button, kept because it is still the right
+   * answer on a page that should carry no hue at all — a legal page, an invoice,
+   * a print view. */
+  .ac-btn-ink {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+    font-weight: var(--w-medium);
+  }
+
+  .ac-btn-ink:hover {
+    color: var(--bg);
+    border-color: var(--fg);
+    box-shadow: var(--shadow-2);
+  }
+
+  /* No border and no background until hovered — for toolbars and icon rows,
+   * where a grid of outlined boxes reads as noise. */
+  .ac-btn-ghost {
+    border-color: transparent;
+  }
+
+  .ac-btn-ghost:hover {
+    border-color: transparent;
+    background: var(--bg-sunken);
+  }
+
+  .ac-btn-sm {
+    font-size: var(--text-xs);
+    padding: var(--s-2) var(--s-3);
+  }
+
+  /* ── fields ──────────────────────────────────────────────────────────
+   *
+   * --rule and not --hairline: a control that reads as faintly as a divider is a
+   * usability problem rather than a style choice. 1.56:1 against 1.21:1 in light.
+   */
+  .ac-field {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: var(--text-sm);
+    line-height: 1.4;
+    padding: var(--s-3);
+    background: var(--bg);
+    color: var(--fg);
+    border: var(--line-1) solid var(--rule);
+    border-radius: var(--r-sm);
+    transition: border-color var(--dur-1) var(--ease-out);
+  }
+
+  .ac-field::placeholder {
+    color: var(--fg-faint);
+  }
+
+  .ac-field:hover {
+    border-color: var(--fg-faint);
+  }
+
+  /* :focus-visible in achroma.css already draws the ring; this only stops the
+   * border fighting it. `select` gets no custom arrow — a hand-drawn caret is
+   * where a control stops matching the platform and starts feeling wrong. */
+  .ac-field:focus {
+    border-color: var(--fg-dim);
+  }
+
+  .ac-field:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: var(--bg-sunken);
+  }
+
+  textarea.ac-field {
+    min-height: 6rem;
+    resize: vertical;
+  }
+
+  /* ── card ────────────────────────────────────────────────────────────
+   *
+   * The hairline is mandatory and not stylistic: --bg-raised on --bg is 1.044:1
+   * in light mode, below the 1.15:1 floor the test suite sets for a decorative
+   * line. Without a border or a shadow, a light-mode card has no edge at all.
+   */
+  .ac-card {
+    background: var(--bg-raised);
+    border: var(--line-1) solid var(--hairline);
+    border-radius: var(--r-lg);
+    padding: var(--s-6);
+  }
+
+  /* Floating: shadow carries it in light, where the tonal step cannot. The
+   * hairline stays for dark, where shadow has only ~2 ramp steps of room below
+   * --bg and cannot carry elevation alone. */
+  .ac-card-float {
+    box-shadow: var(--shadow-2);
+  }
+
+  .ac-card-sunken {
+    background: var(--bg-sunken);
+  }
+
+  /* ── badge ───────────────────────────────────────────────────────────
+   *
+   * Mono, uppercase, tracked out — the .ac-label treatment in a pill, so a badge
+   * reads as part of the type system rather than as a separate widget.
+   */
+  .ac-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: var(--w-medium);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    line-height: 1;
+    padding: var(--s-1) var(--s-3);
+    border: var(--line-1) solid var(--hairline);
+    border-radius: var(--r-full);
+    color: var(--fg-dim);
+  }
+
+  .ac-badge-accent {
+    color: var(--accent-text);
+    background: var(--accent-bg);
+    border-color: var(--accent-line);
+  }
+
+  .ac-badge-danger {
+    color: var(--danger-text);
+    background: var(--danger-bg);
+    border-color: var(--danger-line);
+  }
+
+  .ac-badge-warn {
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    border-color: var(--warn-line);
+  }
+
+  .ac-badge-ok {
+    color: var(--ok-text);
+    background: var(--ok-bg);
+    border-color: var(--ok-line);
+  }
+
+  /* ── note / callout ──────────────────────────────────────────────────
+   *
+   * The 3px left rail is the whole ornament. Every variant sets three tokens and
+   * nothing else, which is the point of the -text/-line/-bg split: one token
+   * cannot clear 4.5:1 as text AND 3:1 as a border.
+   */
+  .ac-note {
+    border: var(--line-1) solid var(--hairline);
+    border-left-width: 3px;
+    border-radius: var(--r-sm);
+    padding: var(--s-4) var(--s-5);
+    font-size: var(--text-sm);
+    color: var(--fg-dim);
+    background: var(--bg-sunken);
+  }
+
+  .ac-note-accent {
+    color: var(--accent-text);
+    background: var(--accent-bg);
+    border-color: var(--accent-line);
+  }
+
+  .ac-note-danger {
+    color: var(--danger-text);
+    background: var(--danger-bg);
+    border-color: var(--danger-line);
+  }
+
+  .ac-note-warn {
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    border-color: var(--warn-line);
+  }
+
+  .ac-note-ok {
+    color: var(--ok-text);
+    background: var(--ok-bg);
+    border-color: var(--ok-line);
+  }
+
+  .ac-note-info {
+    color: var(--info-text);
+    background: var(--info-bg);
+    border-color: var(--info-line);
+  }
+
+  /* ── table ───────────────────────────────────────────────────────────
+   *
+   * The header row is the .ac-label treatment, which is what makes a table look
+   * like it belongs to this system rather than to the browser. --rule under the
+   * head and --hairline between rows: the head is a stronger boundary than a row
+   * division, and using one weight for both is why default tables read as a grid
+   * of boxes.
+   */
+  .ac-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .ac-table th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: var(--w-medium);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    padding: var(--s-2) var(--s-3);
+    border-bottom: var(--line-1) solid var(--rule);
+    white-space: nowrap;
+  }
+
+  .ac-table td {
+    padding: var(--s-3);
+    border-bottom: var(--line-1) solid var(--hairline);
+    color: var(--fg-dim);
+  }
+
+  /* Numbers get the mono face and right alignment. tabular-nums stops digits
+   * shifting width between rows, which is what makes a column of figures look
+   * ragged even when it is correctly aligned. */
+  .ac-table .ac-num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--fg);
+  }
+
+  /* ── meter ───────────────────────────────────────────────────────────
+   *
+   * A plain div, not <progress>: <progress> cannot be styled consistently across
+   * engines without appearance:none plus three vendor pseudo-elements, and it
+   * carries an implicit role this does not always want. Put role="progressbar"
+   * and aria-valuenow on the outer element when it is genuinely a progress bar.
+   */
+  .ac-meter {
+    height: 4px;
+    background: var(--bg-sunken);
+    border-radius: var(--r-full);
+    overflow: hidden;
+  }
+
+  .ac-meter > * {
+    display: block;
+    height: 100%;
+    background: var(--accent-fill);
+    border-radius: inherit;
+    transition: width var(--dur-3) var(--ease-out);
+  }
+
+  /* ── accent link ─────────────────────────────────────────────────────
+   *
+   * Opt-in. achroma.css makes every <a> achromatic-and-underlined, which is the
+   * correct default because it works with no accent at all. This is for the
+   * links that are the point of the page — a nav item, a call to action in prose.
+   *
+   * The underline stays. Colour is an addition to the affordance, never a
+   * replacement for it (WCAG 1.4.1), and it is also what keeps an accent link
+   * legible for anyone who cannot separate indigo from ink.
+   */
+  .ac-link {
+    color: var(--accent-text);
+    text-decoration-color: var(--accent-line);
+  }
+
+  .ac-link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  /* ── layout ──────────────────────────────────────────────────────────
+   *
+   * Three primitives, because proof.html invented `max-width: 70rem` locally and
+   * site six would have invented a different number. Overridable per instance
+   * through the custom property rather than by writing a second class.
+   */
+  .ac-container {
+    width: 100%;
+    max-width: var(--ac-container, 70rem);
+    margin-inline: auto;
+    padding-inline: var(--s-6);
+  }
+
+  /* The owl selector: margin between siblings, never on the first or last child,
+   * so a stack never adds a stray edge to whatever contains it. */
+  .ac-stack > * + * {
+    margin-top: var(--ac-gap, var(--s-4));
+  }
+
+  .ac-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ac-gap, var(--s-3));
+  }
+
+  /* ── prose ───────────────────────────────────────────────────────────
+   *
+   * For rendered markdown and CMS output, where you do not control the markup and
+   * cannot add a class per element.
+   *
+   * 68ch, not a rem width: the measure that matters is characters per line, and
+   * ch tracks the font. 45-75 characters is the readable range and 68 sits inside
+   * it at every --text-* size, which a fixed rem width does not.
+   */
+  .ac-prose {
+    max-width: 68ch;
+    color: var(--fg-dim);
+  }
+
+  .ac-prose > * + * {
+    margin-top: var(--s-4);
+  }
+
+  /* Headings need more space above than below, so they attach to the text they
+   * introduce rather than floating between two blocks. */
+  .ac-prose h2,
+  .ac-prose h3,
+  .ac-prose h4 {
+    margin-top: var(--s-10);
+    color: var(--fg);
+  }
+
+  .ac-prose ul,
+  .ac-prose ol {
+    padding-left: var(--s-5);
+  }
+
+  .ac-prose li + li {
+    margin-top: var(--s-2);
+  }
+
+  /* The accent rail is the one flash of hue in a wall of text, and a quote is
+   * exactly the place a reader's eye should be pulled to. No italics: Geist's
+   * oblique is synthesised, and a synthesised slant on a 300 weight looks like a
+   * rendering bug. */
+  .ac-prose blockquote {
+    margin-inline: 0;
+    padding-left: var(--s-5);
+    border-left: var(--line-2) solid var(--accent-line);
+    color: var(--fg);
+    font-style: normal;
+  }
+
+  .ac-prose pre {
+    background: var(--bg-sunken);
+    border: var(--line-1) solid var(--hairline);
+    border-radius: var(--r-md);
+    padding: var(--s-4);
+    overflow-x: auto;
+  }
+
+  /* Inline code only. `pre code` must not get a second background and border on
+   * top of the block's own. */
+  .ac-prose :not(pre) > code {
+    background: var(--bg-sunken);
+    border: var(--line-1) solid var(--hairline);
+    border-radius: var(--r-sm);
+    padding: 0.1em 0.32em;
+  }
+}

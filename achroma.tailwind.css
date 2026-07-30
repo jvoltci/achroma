@@ -30,19 +30,42 @@
 
   /* ── interaction ──────────────────────────────────────────────────
    *
-   * This is the line that makes a shadcn app achromatic. --primary is where
-   * its accent hue lived; here it is ink. A filled primary button becomes
-   * --fg on --bg, which is why --primary-foreground is the background rather
-   * than a light neutral.
+   * --primary is the one slot where hue belongs: shadcn uses it for the single
+   * action on a screen, which is exactly what --accent-fill means. White ink on
+   * it is asserted at 5.98:1 in both modes, so --primary-foreground is
+   * --accent-on-fill and not a neutral.
+   *
+   * The all-ink original is one line away, and is still the right answer on a
+   * page that should carry no hue at all — an invoice, a legal page, a print
+   * view. Put this in your own CSS after this file:
+   *
+   *     :root { --color-primary: var(--fg); --color-primary-foreground: var(--bg) }
+   *
+   * or reach for .ac-btn-ink from achroma.components.css for a one-off.
    */
-  --color-primary: var(--fg);
-  --color-primary-foreground: var(--bg);
+  --color-primary: var(--accent-fill);
+  --color-primary-foreground: var(--accent-on-fill);
   --color-secondary: var(--bg-sunken);
   --color-secondary-foreground: var(--fg);
   --color-muted: var(--bg-sunken);
   --color-muted-foreground: var(--fg-dim);
+
+  /* CAREFUL: shadcn's `accent` is NOT achroma's accent. Here it means the grey
+   * hover/highlight surface behind a menu item, and it stays achromatic. The
+   * indigo lives in `brand-*` below precisely so that `bg-accent` cannot
+   * accidentally paint a menu row indigo — the two words collide and only one of
+   * them can keep the name shadcn's components already reference. */
   --color-accent: var(--bg-sunken);
   --color-accent-foreground: var(--fg);
+
+  /* achroma's accent, under a name that does not clash: text-brand, border-brand
+   * and bg-brand-fill. Use these for anything outside shadcn's own slots — a
+   * marketing headline, an active nav item, a stat that matters. */
+  --color-brand: var(--accent-text);
+  --color-brand-line: var(--accent-line);
+  --color-brand-bg: var(--accent-bg);
+  --color-brand-fill: var(--accent-fill);
+  --color-brand-on-fill: var(--accent-on-fill);
 
   /* ── semantic ─────────────────────────────────────────────────────
    *
@@ -70,6 +93,16 @@
    */
   --color-border: var(--hairline);
   --color-input: var(--rule);
+
+  /* var(--ring) and NOT --accent-text, even though an indigo focus ring looks
+   * better. --ring is ink, which is 19.27:1 against the page where the accent is
+   * 6.26:1, and a focus ring is the one thing that must survive being drawn over
+   * an arbitrary surface. It also keeps this file and achroma.css agreeing: point
+   * only the bridge at the accent and a Tailwind app would focus indigo while a
+   * plain-CSS page focused black, from one stylesheet.
+   *
+   * If you want the accent ring, move the token itself and both paths follow:
+   *     :root { --ring: var(--accent-text) } */
   --color-ring: var(--ring);
 
   /* ── sidebar, which shadcn treats as its own surface set ───────────── */

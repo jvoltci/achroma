@@ -64,6 +64,66 @@ wrong. Spending a fourth hue on the absence of a problem would devalue the other
 three. `--info-*` keeps the same three-token shape and clears the same floors, in
 grey.
 
+## One accent, and it means affordance
+
+There are exactly two kinds of colour here:
+
+- **Status** — `--danger`, `--warn`, `--ok`. What happened.
+- **Affordance** — `--accent`. What you can do.
+
+`--accent-*` is indigo, hue 285. It is not decoration: a fully achromatic page
+reads muted because "you can act on this" has nowhere to go, so weight and
+position have to carry it alone. Giving affordance its own hue is the same argument
+that gives danger one.
+
+Hue 285 was picked against blue, teal and magenta on measured grounds. Max
+in-gamut chroma at the shipped lightness of `0.520`:
+
+| Hue | Chroma | |
+|---|---|---|
+| indigo 285 | **0.200** | chosen |
+| magenta 340 | 0.196 | reads consumer in light mode |
+| blue 250 | 0.128 | what Vercel, Stripe and Things already use |
+| teal 200 | 0.077 | sRGB has almost no chroma in blue-green at mid lightness |
+
+285 also sits far from all three status hues — 27, 78 and 152 — so an accent
+border can never be misread as a warning.
+
+Five tokens: `--accent-text`, `--accent-line`, `--accent-bg`, `--accent-fill` and
+`--accent-on-fill`. The last two do not flip between modes, because white ink on
+that fill clears 4.5:1 on paper *and* on ink.
+
+**Use it for 1–3% of the pixels.** The greys are still the system. `::selection`
+is the highest-leverage place it appears — a visitor triggers it by reflex, dozens
+of times a session.
+
+Want no hue at all? One line puts the ink button back:
+
+```css
+:root { --color-primary: var(--fg); --color-primary-foreground: var(--bg) }
+```
+
+## Components — the essentials
+
+```css
+@import 'achroma/achroma.css';
+@import 'achroma/achroma.components.css';   /* optional */
+```
+
+Nine primitives in `@layer components`: `.ac-btn` (+ `-fill`, `-ink`, `-ghost`,
+`-sm`), `.ac-field`, `.ac-card`, `.ac-badge`, `.ac-note`, `.ac-table`, `.ac-meter`,
+`.ac-link`, and three layout primitives — `.ac-container`, `.ac-stack`,
+`.ac-cluster` — plus `.ac-prose` for markdown you do not control.
+
+A separate file on purpose. achroma.css is a token spine and its value is that it
+fights nobody; a shadcn or MUI consumer wants the tokens and already owns their
+components.
+
+**Deliberately absent: dialog, dropdown, tabs, tooltip, accordion, toast.** Every
+one needs focus trapping, ARIA wiring and keyboard handling to be correct, and CSS
+alone produces something that looks right and is unusable with a keyboard. Use
+Radix or shadcn and let the bridge style them.
+
 ## Elevation, and the 23× rule
 
 Giving up hue costs you a hierarchy channel, so shadow is not decoration here.

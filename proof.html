@@ -208,6 +208,11 @@
         background: var(--danger-bg);
         color: var(--danger-text);
       }
+      .note.accent {
+        border-color: var(--accent-line);
+        background: var(--accent-bg);
+        color: var(--accent-text);
+      }
       .note.info {
         border-color: var(--info-line);
         background: var(--info-bg);
@@ -343,7 +348,7 @@
       </section>
 
       <section>
-        <h2>Semantics — the only colour in the system</h2>
+        <h2>Semantics — status, plus one affordance</h2>
         <div class="note ok">Succeeded. <code>--ok-text</code> on <code>--ok-bg</code>.</div>
         <div class="note warn">
           Read this before trusting the output. <code>--warn-text</code> on
@@ -351,6 +356,10 @@
         </div>
         <div class="note danger">
           This failed. <code>--danger-text</code> on <code>--danger-bg</code>.
+        </div>
+        <div class="note accent">
+          The accent is the only hue that is not a status. It marks affordance —
+          what you can act on. <code>--accent-text</code> on <code>--accent-bg</code>.
         </div>
         <div class="note info">
           For your information — and note that it carries no hue at all.
@@ -416,8 +425,8 @@
             <h3>Hairline list</h3>
             <div class="list">
               <div><span>Neutral ramp</span><span>16 steps</span></div>
-              <div><span>Colour aliases</span><span>21</span></div>
-              <div><span>Semantic tokens</span><span>12 × 2 modes</span></div>
+              <div><span>Colour aliases</span><span>26</span></div>
+              <div><span>Semantic tokens</span><span>17 × 2 modes</span></div>
               <div><span>Elevation</span><span><span class="pill">3 + scrim</span></span></div>
               <div><span>Dependencies</span><span>0</span></div>
             </div>
@@ -459,6 +468,8 @@
         '--fg', '--fg-dim', '--fg-faint',
         '--hairline', '--rule', '--ring',
         '--info-text', '--info-line', '--info-bg',
+        '--accent-text', '--accent-line', '--accent-bg',
+        '--accent-fill', '--accent-on-fill',
       ];
       const TYPE = [
         ['display', 'var(--text-display)', 'var(--w-thin)', 'var(--track-display)'],
