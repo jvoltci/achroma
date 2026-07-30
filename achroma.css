@@ -290,8 +290,14 @@
    *   dark  base 0.00478   17.43    7.69
    *
    * One ramp step is the most that fits. Two would put dark --fg-dim near its
-   * floor, and contrast.mjs would still report 7.69 because it reads the bare
+   * floor, and contrast.mjs would still report 7.71 because it reads the bare
    * token and never sees the wash.
+   *
+   * Note the two numbers for the same token: 7.71 is what contrast.mjs computes
+   * from the OKLCH values, 7.69 is what the painted pixels measure at page base.
+   * The 0.02 gap is the computed-versus-8-bit-quantized error that oklch.mjs
+   * documents, not a discrepancy — but the tables above are painted-pixel
+   * figures throughout, so do not compare them against suite output directly.
    *
    * Opt in with `background-image: var(--wash)` on body. Not applied by
    * default — a design system should not decide that every consumer's page has

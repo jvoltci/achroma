@@ -16,6 +16,8 @@ on:
       - 'fonts/**'
       - 'test/**'
       - 'package.json'
+      - 'docs/**'
+      - 'mkdocs.yml'
       - '.github/workflows/deploy-web.yml'
   pull_request:
   workflow_dispatch:
@@ -64,6 +66,27 @@ jobs:
           cp fonts/*.woff2 _site/fonts/
           touch _site/.nojekyll
           echo "total: $(du -sh _site | cut -f1)"
+
+      # Docs go into /doc on the same artifact, mirroring the sibling project's
+      # split: proof.html is the live reference at the site root, the written
+      # docs sit under it.
+      #
+      # docs/assets/extra.css references ../../fonts/, which from
+      # /achroma/doc/assets/ resolves to /achroma/fonts/ — the copy made above.
+      # url() resolves against the stylesheet's URL, not the document's, so the
+      # fonts are NOT duplicated into _site/doc/. Getting this wrong fails
+      # silently as a fallback to system sans.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build docs into /doc
+        run: |
+          pip install --quiet mkdocs-material
+          mkdocs build --strict --site-dir _site/doc
+          test -f _site/fonts/geist-latin-wght-normal.woff2 \
+            || { echo "fonts missing at _site/fonts/ — extra.css would fall back"; exit 1; }
+          echo "doc: $(du -sh _site/doc | cut -f1)"
 
       - uses: actions/upload-pages-artifact@v3
         with:
