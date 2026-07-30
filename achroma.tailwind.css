@@ -46,12 +46,21 @@
 
   /* ── semantic ─────────────────────────────────────────────────────
    *
-   * shadcn has only `destructive`, so warn and ok have no mapping here and
-   * must be used through the Achroma tokens directly. The -text variant is
+   * shadcn has only `destructive`, so warn, ok and info have no mapping here
+   * and must be used through the Achroma tokens directly. The -text variant is
    * the one that clears 4.5:1; --danger-line would not.
+   *
+   * info needs no mapping in practice: it is neutral, so --color-muted-foreground
+   * above already resolves to the same --fg-dim that --info-text does.
    */
   --color-destructive: var(--danger-text);
   --color-destructive-foreground: var(--n-0);
+
+  /* The modal backdrop, so a consumer can replace shadcn's hardcoded
+   * `bg-black/50` with `bg-scrim` and get the per-mode value. --scrim already
+   * carries its own alpha, so do NOT also apply a `/50` modifier — Tailwind
+   * would override the alpha and hand back the light value in both modes. */
+  --color-scrim: var(--scrim);
 
   /* ── lines and focus ──────────────────────────────────────────────
    *
@@ -81,6 +90,34 @@
   --radius-md: var(--r-md);
   --radius-lg: var(--r-lg);
   --radius-xl: var(--r-lg);
+
+  /* --radius-full is deliberately NOT mapped. Tailwind's own default is
+   * `calc(infinity * 1px)`, which pills correctly at any height; achroma ships
+   * --r-full: 999px instead because calc() infinity is outside this package's
+   * browserslist floor. Overriding Tailwind's with ours would be a downgrade
+   * for no gain — the two are indistinguishable below ~2000px anyway. */
+
+  /* ── elevation ─────────────────────────────────────────────────────
+   *
+   * Every one of Tailwind's seven shadow names is remapped, and the completeness
+   * is the point rather than thoroughness for its own sake. Tailwind ships ONE
+   * shadow scale for both modes. Because browsers composite in gamma-encoded
+   * sRGB, the alpha that darkens the page by one ramp step is 0.023 in light and
+   * 0.528 in dark — 23x apart — so any Tailwind default left unmapped is not a
+   * subtler shadow in dark mode, it is no shadow at all. A single surviving
+   * `shadow-2xl` would be the one flat card on the page.
+   *
+   * Seven names collapse onto three levels because achroma has three. That is
+   * lossy on purpose: a fourth elevation level is a sign the layout needs
+   * fixing, not the shadow. shadcn reaches for xs, sm, md and lg.
+   */
+  --shadow-2xs: var(--shadow-1);
+  --shadow-xs: var(--shadow-1);
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-2);
+  --shadow-xl: var(--shadow-3);
+  --shadow-2xl: var(--shadow-3);
 }
 
 /* ── deliberately absent: --color-chart-1 … --color-chart-5 ───────────

@@ -210,6 +210,100 @@
   --ok-line: oklch(0.58 0.12 150);
   --ok-bg: oklch(0.965 0.018 150);
 
+  /* ── info — the fourth state, and it carries no hue ─────────────────
+   *
+   * danger, warn and ok earn their hue because each one asks the reader to do
+   * something. Info does not: it is the state that says "nothing is wrong".
+   * In a system whose whole claim is that colour means something, spending a
+   * fourth hue on the absence of a problem would devalue the other three.
+   *
+   * So info is neutral, and that is the statement rather than an omission. It
+   * holds the same three-token shape as the others, and clears the same floors:
+   * -text >= 4.5:1, -line >= 3:1.
+   *
+   *              light   dark
+   *   -text      5.28    7.71   (>= 4.5, on --bg)
+   *   -line      3.49    5.25   (>= 3.0, on --bg)
+   *   -text/-bg  5.02    8.11   (>= 4.5)
+   *
+   * --info-line is --fg-faint and not --rule, which is the one non-obvious
+   * choice here. --rule is 1.56:1 in light, so an info border built from it
+   * would be four times fainter than a warn border and would break the "-line
+   * clears 3:1" contract that every other semantic keeps.
+   *
+   * These are var() indirections, not literals, and they are still repeated in
+   * all four blocks. A custom property's var() is substituted where it is
+   * DECLARED, not where it is used, so a single `--info-text: var(--fg-dim)` on
+   * :root would compute to light's --fg-dim and inherit that value into a
+   * `<section class="dark">` unchanged. --ring has the same shape for the same
+   * reason. */
+  --info-text: var(--fg-dim);
+  --info-line: var(--fg-faint);
+  --info-bg: var(--bg-sunken);
+
+  /* ── elevation ──────────────────────────────────────────────────────
+   *
+   * Achromatic design gives up hue as a hierarchy channel, which leaves
+   * lightness, weight, space, line and shadow. Shadow was the one this system
+   * was missing, and it is not optional in light mode — see the number below.
+   *
+   * Shadow is BLACK AT ALPHA, never a tinted grey. Most systems tint their
+   * shadows blue by accident (a #64748b at low alpha is the usual culprit) and
+   * nobody ever notices; test/contrast.mjs asserts chroma and hue are literally
+   * 0 here.
+   *
+   * The alphas are per-mode and the gap is far larger than it looks. Browsers
+   * composite in gamma-encoded sRGB, so the alpha needed to darken --bg by one
+   * ramp step is:
+   *
+   *   light  --bg n-25  -> n-50    alpha 0.023
+   *   dark   --bg n-900 -> n-950   alpha 0.528     <- 23x more
+   *
+   * That is why a shared shadow set has an invisible dark mode. It is also why
+   * dark shadows here look absurdly heavy written down and read as subtle.
+   *
+   * Dark mode has a hard ceiling that light does not: there are only about two
+   * ramp steps of room below --bg before pure black, so shadow can never carry
+   * dark-mode elevation on its own. The two modes are complementary, which the
+   * surface numbers already show:
+   *
+   *                        raised vs --bg
+   *   light                1.044:1   <- invisible; shadow or hairline required
+   *   dark                 1.104:1   <- carries the step itself
+   *
+   * So: light gets its elevation from --shadow-*, dark gets it from the tonal
+   * step plus --hairline. Neither mode should rely on tone alone.
+   *
+   * 1 = resting lift (button, input). 2 = card, popover, dropdown.
+   * 3 = modal, command palette. Nothing above 3; a fourth level is a sign the
+   * layout, not the shadow, needs fixing. */
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.05);
+  --shadow-2:
+    0 1px 2px oklch(0 0 0 / 0.04),
+    0 4px 8px -1px oklch(0 0 0 / 0.06);
+  --shadow-3:
+    0 1px 2px oklch(0 0 0 / 0.04),
+    0 8px 16px -2px oklch(0 0 0 / 0.08),
+    0 24px 48px -8px oklch(0 0 0 / 0.10);
+
+  /* The backdrop behind a modal. Measured as the contrast between the scrimmed
+   * page and the dialog surface (--bg-raised), which is the job it is doing:
+   *
+   *   alpha     0.35   0.45   0.55   0.65   0.72   0.80
+   *   light     2.54   3.48   4.92   7.17   9.44   12.82
+   *   dark      1.14   1.15   1.16   1.17   1.18   1.19   <- flat
+   *
+   * The dark row is the finding. Darkening a near-black page cannot separate it
+   * from anything, so no alpha makes a dark scrim do this job — 0.80 buys 0.05
+   * over 0.35. A dark dialog gets its separation from --bg-raised, --shadow-3
+   * and a --hairline; the scrim is only there to mute the content behind it and
+   * to catch the click that dismisses it.
+   *
+   * Not measurable by test/contrast.mjs: it composites, and the suite reads bare
+   * token values. Do not add it to TARGETS — parseOklch throws on an alpha
+   * component by design, rather than silently measuring the wrong thing. */
+  --scrim: oklch(0 0 0 / 0.55);
+
   /* ── type ─────────────────────────────────────────────────────────── */
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -253,11 +347,28 @@
   --s-20: 5rem;
   --s-24: 6rem;
 
+  /* ── line weight ────────────────────────────────────────────────────
+   *
+   * The look is built out of fine lines, so the width is a token and not a
+   * hardcoded 1px in every rule. Mode-independent — widths do not flip.
+   *
+   * --line-1 stays at 1px rather than a hairline fraction. A 0.5px border is a
+   * real option on a 2x display, but on a 1x display it rounds to either 0 or 1
+   * unpredictably per edge, so a four-sided box loses one or two of its sides.
+   * If you want true hairlines, do it behind a min-resolution query in your own
+   * CSS; this file will not ship a border that vanishes. */
+  --line-1: 1px;
+  --line-2: 2px;
+
   /* ── radius — near-sharp on purpose ───────────────────────────────── */
   --r-0: 0;
   --r-sm: 2px;
   --r-md: 4px;
   --r-lg: 8px;
+  /* Not 50%: on a non-square box 50% gives an ellipse, which is wrong for a
+   * pill-shaped badge or a switch track. A large fixed length clamps to a
+   * semicircle on the short axis at any aspect ratio. */
+  --r-full: 999px;
 
   /* ── motion ───────────────────────────────────────────────────────── */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -266,6 +377,17 @@
   --dur-2: 180ms;
   --dur-3: 280ms;
   --dur-4: 420ms;
+
+  /* --stagger is a step, not a delay, and CSS cannot supply the index it needs
+   * to multiply. There is no class to ship here — the index has to come from
+   * your markup or template:
+   *
+   *     <li style="--i: 0">  <li style="--i: 1">  ...
+   *     li { animation-delay: calc(var(--i) * var(--stagger)) }
+   *
+   * It goes to 0ms under prefers-reduced-motion with the durations below, so a
+   * list that staggers in does not become a list that appears one item at a
+   * time in silence. */
   --stagger: 40ms;
 
   /* ── texture ──────────────────────────────────────────────────────── */
@@ -331,6 +453,23 @@
     --ok-text: oklch(0.78 0.13 155);
     --ok-line: oklch(0.52 0.11 152);
     --ok-bg: oklch(0.230 0.040 152);
+    --info-text: var(--fg-dim);
+    --info-line: var(--fg-faint);
+    --info-bg: var(--bg-sunken);
+    /* Alphas are ~11x light's, and that is measured, not nervousness: one ramp
+     * step of darkening costs alpha 0.023 in light and 0.528 in dark. */
+    --shadow-1: 0 1px 2px oklch(0 0 0 / 0.55);
+    --shadow-2:
+      0 1px 2px oklch(0 0 0 / 0.50),
+      0 4px 8px -1px oklch(0 0 0 / 0.60);
+    --shadow-3:
+      0 1px 2px oklch(0 0 0 / 0.50),
+      0 8px 16px -2px oklch(0 0 0 / 0.65),
+      0 24px 48px -8px oklch(0 0 0 / 0.70);
+    /* Cannot separate the backdrop from the dialog at any alpha — 1.17:1 here
+     * versus 4.92:1 in light. It mutes content and catches the dismiss click;
+     * --bg-raised and --shadow-3 do the actual separating. */
+    --scrim: oklch(0 0 0 / 0.65);
     --grain-opacity: 0.07;
     /* One ramp step, as in light. Dark is the side that constrains it: the wash
      * lightens the page, which moves light-on-dark text toward its floor. */
@@ -368,6 +507,23 @@
   --ok-text: oklch(0.78 0.13 155);
   --ok-line: oklch(0.52 0.11 152);
   --ok-bg: oklch(0.230 0.040 152);
+  --info-text: var(--fg-dim);
+  --info-line: var(--fg-faint);
+  --info-bg: var(--bg-sunken);
+  /* Alphas are ~11x light's, and that is measured, not nervousness: one ramp
+   * step of darkening costs alpha 0.023 in light and 0.528 in dark. */
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.55);
+  --shadow-2:
+    0 1px 2px oklch(0 0 0 / 0.50),
+    0 4px 8px -1px oklch(0 0 0 / 0.60);
+  --shadow-3:
+    0 1px 2px oklch(0 0 0 / 0.50),
+    0 8px 16px -2px oklch(0 0 0 / 0.65),
+    0 24px 48px -8px oklch(0 0 0 / 0.70);
+  /* Cannot separate the backdrop from the dialog at any alpha — 1.17:1 here
+   * versus 4.92:1 in light. It mutes content and catches the dismiss click;
+   * --bg-raised and --shadow-3 do the actual separating. */
+  --scrim: oklch(0 0 0 / 0.65);
   --grain-opacity: 0.07;
   /* One ramp step, as in light. Dark is the side that constrains it: the wash
    * lightens the page, which moves light-on-dark text toward its floor. */
@@ -409,6 +565,18 @@
   --ok-text: oklch(0.48 0.12 150);
   --ok-line: oklch(0.58 0.12 150);
   --ok-bg: oklch(0.965 0.018 150);
+  --info-text: var(--fg-dim);
+  --info-line: var(--fg-faint);
+  --info-bg: var(--bg-sunken);
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.05);
+  --shadow-2:
+    0 1px 2px oklch(0 0 0 / 0.04),
+    0 4px 8px -1px oklch(0 0 0 / 0.06);
+  --shadow-3:
+    0 1px 2px oklch(0 0 0 / 0.04),
+    0 8px 16px -2px oklch(0 0 0 / 0.08),
+    0 24px 48px -8px oklch(0 0 0 / 0.10);
+  --scrim: oklch(0 0 0 / 0.55);
   --grain-opacity: 0.10;
   --wash: radial-gradient(120% 70% at 50% -15%, var(--n-0) 0%, transparent 55%);
 }
@@ -607,6 +775,46 @@
     background-repeat: repeat;
     background-size: 180px 180px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ── the display treatment ──────────────────────────────────────────
+   *
+   * One half of the type signature: huge, thin, tight. The other half is .label
+   * below — tiny, wide, uppercase, mono. The tension between the two IS the
+   * look, and until now it lived in proof.html's <style> block instead of in
+   * the package, so a consumer could install achroma and still have no way to
+   * reproduce the thing the README advertises.
+   *
+   * Not an h1 default, and not a margin. A heading is structural; a display
+   * treatment is editorial. Tying them together would make every h1 on a dense
+   * page 5rem tall. Apply it explicitly: <h1 class="display">.
+   *
+   * --w-thin is 200 and not Geist's available 100. --text-display clamps down to
+   * 2.5rem on a narrow viewport, and hairline weights break up below roughly
+   * 40px on a 1x display — 100 renders as broken strokes there.
+   *
+   * text-wrap: balance is outside the browserslist floor (Chrome 114, Safari
+   * 17.5) and is here anyway: an unknown value is dropped, so old browsers get
+   * normal wrapping, and a one-word orphan under a 5rem headline is the single
+   * most common way display type looks unfinished.
+   */
+  .display {
+    font-size: var(--text-display);
+    font-weight: var(--w-thin);
+    letter-spacing: var(--track-display);
+    line-height: var(--lh-display);
+    text-wrap: balance;
+  }
+
+  /* Opt-in atmosphere, the counterpart to .grain. background-image alone, so it
+   * composes with whatever set the background colour instead of replacing it.
+   *
+   * It has to be a class rather than a default for a mechanical reason as well
+   * as a taste one: `background: var(--bg)` on body is a shorthand and resets
+   * background-image to none, so the token could never apply by itself. .wash is
+   * 0,1,0 against body's 0,0,1, so <body class="wash"> wins either way. */
+  .wash {
+    background-image: var(--wash);
   }
 
   /* ── the micro-label ────────────────────────────────────────────────

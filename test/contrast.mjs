@@ -42,7 +42,7 @@ const check = (ok, message) => {
   return ok;
 };
 
-/** The 18 aliases that must be defined in every mode. This list is the contract. */
+/** The 21 aliases that must be defined in every mode. This list is the contract. */
 const COLOUR_ALIASES = [
   '--bg', '--bg-raised', '--bg-sunken',
   '--fg', '--fg-dim', '--fg-faint',
@@ -50,9 +50,33 @@ const COLOUR_ALIASES = [
   '--danger-text', '--danger-line', '--danger-bg',
   '--warn-text', '--warn-line', '--warn-bg',
   '--ok-text', '--ok-line', '--ok-bg',
+  '--info-text', '--info-line', '--info-bg',
 ];
 
-/** `[alias, against, minimum]` — the reason each token exists, as a number. */
+/**
+ * `[alias, against, minimum]` — the reason each token exists, as a number.
+ *
+ * contrast() is symmetric, so the pair order is presentation only.
+ *
+ * The last two entries are PINS, not accessibility floors, and the distinction
+ * matters. A surface-against-surface step has no WCAG threshold — nobody reads
+ * text off the boundary between two backgrounds. They are here because the
+ * numbers turned out to be a finding:
+ *
+ *                       raised vs --bg   sunken vs --bg
+ *   light               1.044            1.051
+ *   dark                1.104            1.052
+ *
+ * Light's raised step is 1.044:1 — BELOW the 1.15:1 floor this same table sets
+ * for --hairline, a purely decorative line. So a raised surface in light mode is
+ * invisible on tone alone, and every card, popover and dropdown must carry a
+ * --hairline or a --shadow-* to have an edge at all. Dark is 2.4x better and
+ * carries its own step, which is the asymmetry the elevation comment in
+ * achroma.css is built on.
+ *
+ * Nothing tested this before, so the ramp could have been flattened further
+ * without a single assertion noticing.
+ */
 const TARGETS = [
   ['--fg', '--bg', 7.0],
   ['--fg-dim', '--bg', 4.5],
@@ -62,12 +86,17 @@ const TARGETS = [
   ['--danger-text', '--bg', 4.5],
   ['--warn-text', '--bg', 4.5],
   ['--ok-text', '--bg', 4.5],
+  ['--info-text', '--bg', 4.5],
   ['--danger-line', '--bg', 3.0],
   ['--warn-line', '--bg', 3.0],
   ['--ok-line', '--bg', 3.0],
+  ['--info-line', '--bg', 3.0],
   ['--danger-text', '--danger-bg', 4.5],
   ['--warn-text', '--warn-bg', 4.5],
   ['--ok-text', '--ok-bg', 4.5],
+  ['--info-text', '--info-bg', 4.5],
+  ['--bg-raised', '--bg', 1.04],
+  ['--bg-sunken', '--bg', 1.04],
 ];
 
 /**
@@ -112,12 +141,33 @@ function decls(chunk) {
   return out;
 }
 
-/** Resolve a declaration to OKLCH, following one level of var() into the ramp. */
-function resolve(value, ramp) {
-  const direct = parseOklch(value);
-  if (direct) return direct;
-  const v = /^var\(\s*(--[a-z0-9-]+)\s*\)$/.exec(value);
-  return v && ramp.has(v[1]) ? ramp.get(v[1]) : null;
+/**
+ * Resolve a declaration to OKLCH, following var() through the alias table and
+ * into the ramp.
+ *
+ * One level was enough while every alias pointed straight at a ramp step. The
+ * info semantics are aliases OF aliases — `--info-text: var(--fg-dim)` ->
+ * `var(--n-600)` -> a literal — so this walks the chain.
+ *
+ * The depth cap and the seen-set are not defensive noise. `--a: var(--b)` with
+ * `--b: var(--a)` is valid CSS that a browser resolves to nothing, and it would
+ * spin here forever. A suite that hangs reads as a stuck CI job, not a failure.
+ */
+function resolve(value, table, ramp) {
+  const seen = new Set();
+  let v = value;
+  for (let depth = 0; depth < 8; depth++) {
+    const direct = parseOklch(v);
+    if (direct) return direct;
+    const m = /^var\(\s*(--[a-z0-9-]+)\s*\)$/.exec(String(v).trim());
+    if (!m) return null;
+    const name = m[1];
+    if (ramp.has(name)) return ramp.get(name);
+    if (seen.has(name) || !table.has(name)) return null;
+    seen.add(name);
+    v = table.get(name);
+  }
+  return null;
 }
 
 const parts = blocks(stripComments(css));
@@ -189,14 +239,39 @@ for (const [aName, a, bName, b] of PARITY) {
   }
 }
 
-// --grain-opacity is not a colour, so it is outside COLOUR_ALIASES — but it is
+// These are not colours, so COLOUR_ALIASES does not cover them — but they are
 // duplicated across all four blocks just the same, so drift is just as invisible.
+//
+// Only --grain-opacity was checked before. --wash had been duplicated four ways
+// since it was added with nothing comparing the copies, and the shadows and the
+// scrim would have joined it.
+const NON_COLOUR_PARITY = [
+  '--grain-opacity',
+  '--wash',
+  '--shadow-1',
+  '--shadow-2',
+  '--shadow-3',
+  '--scrim',
+];
+
+// Whitespace inside a CSS value is not semantic, and --shadow-2/--shadow-3 are
+// written across several lines at two different indent depths — the media query
+// block is nested one level deeper than the class block. Compare normalised, or
+// every multi-line token reports a false drift.
+const norm = (s) => (s ?? '').replace(/\s+/g, ' ').trim();
+
 for (const [aName, a, bName, b] of PARITY) {
-  check(
-    a.get('--grain-opacity') === b.get('--grain-opacity'),
-    `${aName} and ${bName} disagree on --grain-opacity: ` +
-      `${a.get('--grain-opacity')} vs ${b.get('--grain-opacity')}`,
-  );
+  for (const token of NON_COLOUR_PARITY) {
+    check(a.has(token), `${aName} block is missing ${token}`);
+    check(b.has(token), `${bName} block is missing ${token}`);
+    if (a.has(token) && b.has(token)) {
+      check(
+        norm(a.get(token)) === norm(b.get(token)),
+        `${aName} and ${bName} disagree on ${token}: ` +
+          `${aName} says ${norm(a.get(token))}, ${bName} says ${norm(b.get(token))}`,
+      );
+    }
+  }
 }
 
 // ── 4. the semantics are inside the sRGB gamut ────────────────────────
@@ -227,7 +302,7 @@ for (const name of CHROMATIC) {
 
 for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...dark])]]) {
   for (const name of CHROMATIC) {
-    const c = resolve(table.get(name) ?? '', ramp);
+    const c = resolve(table.get(name) ?? '', table, ramp);
     if (!c) continue;
     const { r, g, b } = oklchToLinearSrgb(c);
     const worst = Math.min(r, g, b);
@@ -343,7 +418,7 @@ if (check(layerAt !== -1, 'achroma.css declares no `@layer base {` — the base 
   }
   const layered = code.slice(layerAt, end);
   const outside = code.slice(0, layerAt) + code.slice(end);
-  for (const sel of ['body', '.grain', '.label', ':focus-visible', 'h1']) {
+  for (const sel of ['body', '.grain', '.wash', '.label', '.display', ':focus-visible', 'h1']) {
     check(
       new RegExp(`(^|[,{}\\s])${sel.replace(/[.:]/g, (c) => `\\${c}`)}\\s*[,{]`, 'm').test(layered),
       `the \`${sel}\` rule is not inside @layer base — unlayered, it beats every ` +
@@ -410,12 +485,85 @@ if (check(layerAt !== -1, 'achroma.css declares no `@layer base {` — the base 
   }
 }
 
-// ── 8. contrast ───────────────────────────────────────────────────────
+// ── 8. elevation is achromatic, and it is per-mode ────────────────────
+//
+// Two ways to get this wrong, and both render beautifully.
+//
+// (a) A tinted shadow. Everyone reaches for a slate or blue-grey at low alpha —
+//     it is what most systems ship, usually without meaning to. In a file whose
+//     entire claim is that nothing is tinted, it is also the one colour no other
+//     check here can see: --shadow-* is absent from COLOUR_ALIASES because it is
+//     not a colour, it is a box-shadow list, and the gamut and contrast passes
+//     only ever look at colours.
+//
+// (b) One shadow set shared by both modes. Browsers composite in gamma-encoded
+//     sRGB, so the alpha that darkens --bg by exactly one ramp step is 0.023 in
+//     light and 0.528 in dark — 23x apart. A light-tuned shadow is not subtle on
+//     a dark page, it is absent, which is why so many dark themes have flat
+//     cards. Asserting dark > light at every layer is what keeps the two sets
+//     from being casually unified by someone tidying up.
+{
+  const ELEVATION = ['--shadow-1', '--shadow-2', '--shadow-3', '--scrim'];
+
+  for (const [mode, table] of [['light', light], ['dark', dark]]) {
+    for (const name of ELEVATION) {
+      const value = table.get(name);
+      if (!check(value !== undefined, `${mode}: ${name} is not declared`)) continue;
+
+      const colours = [...value.matchAll(/oklch\(([^)]*)\)/g)];
+      check(colours.length > 0, `${mode}: ${name} declares no oklch() colour`);
+      for (const [, body] of colours) {
+        check(
+          /^\s*0\s+0\s+0\s*\/\s*[\d.]+\s*$/.test(body),
+          `${mode}: ${name} uses oklch(${body.trim()}) — elevation must be black at ` +
+            `alpha, oklch(0 0 0 / a). A tinted shadow is the one colour in this file ` +
+            `that no other assertion can see.`,
+        );
+      }
+
+      // A hex or rgba() would slip past the check above entirely, since it only
+      // inspects what is inside oklch().
+      check(
+        !/(rgba?\(|hsla?\(|#[0-9a-fA-F]{3,8})/.test(value),
+        `${mode}: ${name} uses a non-oklch colour notation, which the achromatic ` +
+          `check above reads straight past.`,
+      );
+    }
+  }
+
+  const alphas = (v) =>
+    [...(v ?? '').matchAll(/oklch\(\s*0\s+0\s+0\s*\/\s*([\d.]+)\s*\)/g)].map((m) =>
+      Number(m[1]),
+    );
+
+  for (const name of ELEVATION) {
+    const l = alphas(light.get(name));
+    const d = alphas(dark.get(name));
+    if (
+      !check(
+        l.length > 0 && l.length === d.length,
+        `${name}: light and dark declare different numbers of shadow layers ` +
+          `(${l.length} vs ${d.length}) — one mode is not the other's counterpart`,
+      )
+    ) {
+      continue;
+    }
+    check(
+      d.every((a, i) => a > l[i]),
+      `${name}: dark alpha is not greater than light at every layer ` +
+        `(light ${l.join('/')}, dark ${d.join('/')}). One ramp step of darkening ` +
+        `costs alpha 0.023 in light and 0.528 in dark, so a light-tuned value is ` +
+        `invisible on a dark page rather than merely quieter.`,
+    );
+  }
+}
+
+// ── 9. contrast ───────────────────────────────────────────────────────
 for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...dark])]]) {
   console.log(`\n${mode}`);
   for (const [fg, bg, min] of TARGETS) {
-    const a = resolve(table.get(fg) ?? '', ramp);
-    const b = resolve(table.get(bg) ?? '', ramp);
+    const a = resolve(table.get(fg) ?? '', table, ramp);
+    const b = resolve(table.get(bg) ?? '', table, ramp);
     if (!check(a && b, `${mode}: cannot resolve ${fg} on ${bg}`)) continue;
     const ratio = contrast(a, b);
     const ok = ratio >= min;

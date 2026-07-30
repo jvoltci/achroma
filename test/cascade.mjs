@@ -63,6 +63,8 @@ const UNCHECKED = [
   '10 Tailwind layer cells (C4: do utilities beat our @layer base)',
   '4 focus-ring cells (I1: --ring resolves and flips)',
   '5 preference-query cells (I5/I6: grain under reduced-motion / transparency / contrast / print)',
+  '4 alias-of-alias cells (I7: does --info-* flip inside a nested section.dark)',
+  '9 elevation cells (I8: do --shadow-*/--scrim resolve and get heavier in dark)',
 ];
 
 const CHROME = findChrome();
@@ -363,6 +365,79 @@ for (const [name, features, media, wantDisplay] of GRAIN_CASES) {
   }
 }
 await emulate([], '');
+
+// ── 6. I7: an alias OF an alias must still flip ───────────────────────
+//
+// --info-text is `var(--fg-dim)`, not a ramp reference, and that makes it the
+// only shape in the file whose correctness is a spec detail rather than a value.
+//
+// A custom property's computed value is its specified value WITH VARIABLES
+// ALREADY SUBSTITUTED. So a single `--info-text: var(--fg-dim)` on :root would
+// compute once, against light's --fg-dim, and inherit that finished colour into
+// a nested `<section class="dark">` — the section would flip --bg, --fg and
+// every ramp-referencing alias, and silently keep the light info grey. The fix
+// is to repeat the declaration in all four blocks, which achroma.css does; this
+// asserts the fix actually works rather than trusting the reasoning.
+//
+// The nested region is the case that matters. A whole-page toggle would pass
+// even if the declaration existed only on :root, because :root is where the
+// substitution would have happened anyway.
+const NESTED_URL = fixture('nested.html', `<!doctype html><html><head><meta charset="utf-8">
+${ACHROMA}</head><body>
+<span id="outer">outer</span>
+<section class="dark"><span id="inner">inner</span></section>
+</body></html>`);
+const LIGHT_DIM = aliasValue('light', '--fg-dim');
+const DARK_DIM = aliasValue('dark', '--fg-dim');
+const LIGHT_SUNKEN = aliasValue('light', '--bg-sunken');
+const DARK_SUNKEN = aliasValue('dark', '--bg-sunken');
+
+await scheme('light');
+await navigate(NESTED_URL);
+for (const [id, wantText, wantBg, where] of [
+  ['outer', LIGHT_DIM, LIGHT_SUNKEN, 'page (light)'],
+  ['inner', DARK_DIM, DARK_SUNKEN, 'nested section.dark'],
+]) {
+  const m = await evaluate(`(() => { const cs = getComputedStyle(document.getElementById('${id}'));
+    return { text: cs.getPropertyValue('--info-text').trim(),
+             bg: cs.getPropertyValue('--info-bg').trim() }; })()`);
+  expect(m.text, wantText, `I7: --info-text in ${where}`, sameColour);
+  expect(m.bg, wantBg, `I7: --info-bg in ${where}`, sameColour);
+}
+
+// ── 7. I8: elevation flips, and dark is the heavier side ──────────────
+//
+// One shadow set shared by both modes is invisible in dark: browsers composite
+// in gamma-encoded sRGB, so one ramp step of darkening costs alpha 0.023 in
+// light and 0.528 in dark. contrast.mjs asserts the source values differ; this
+// asserts a browser actually resolves them per mode, which is the part a regex
+// cannot see.
+const alphaOf = (v) => {
+  const a = [...v.matchAll(/\/\s*([\d.]+)\s*\)/g)].map((m) => Number(m[1]));
+  return a.length ? Math.max(...a) : null;
+};
+const ELEV_URL = fixture('elev.html', page(ACHROMA));
+const seen = {};
+for (const os of ['light', 'dark']) {
+  await scheme(os);
+  await navigate(ELEV_URL);
+  seen[os] = await evaluate(`(() => { const cs = getComputedStyle(document.documentElement);
+    return { s1: cs.getPropertyValue('--shadow-1').trim(),
+             s3: cs.getPropertyValue('--shadow-3').trim(),
+             scrim: cs.getPropertyValue('--scrim').trim() }; })()`);
+  for (const [k, v] of Object.entries(seen[os])) {
+    checks++;
+    check(alphaOf(v) !== null, `I8: OS ${os}, --${k} resolved to ${JSON.stringify(v)} with no alpha — the token did not resolve`);
+  }
+}
+for (const k of ['s1', 's3', 'scrim']) {
+  const [l, d] = [alphaOf(seen.light[k]), alphaOf(seen.dark[k])];
+  checks++;
+  check(l !== null && d !== null && d > l,
+    `I8: ${k} alpha did not increase in dark (light ${l}, dark ${d}). A light-tuned ` +
+    `shadow is absent on a dark page, not subtler — the gap is 23x.`);
+}
+await scheme('light');
 
 // ── report ────────────────────────────────────────────────────────────
 console.log(`\n${version.Browser}  (${CHROME})`);
