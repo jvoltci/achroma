@@ -1,0 +1,83 @@
+name: Deploy web app to GitHub Pages
+
+# Publishes proof.html as jvoltci.github.io/achroma/ — the living token
+# reference.
+#
+# No build step: achroma is plain CSS. The artifact is proof.html renamed to
+# index.html, the stylesheet, the bridge, and the fonts.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'achroma.css'
+      - 'achroma.tailwind.css'
+      - 'proof.html'
+      - 'fonts/**'
+      - 'test/**'
+      - 'package.json'
+      - '.github/workflows/deploy-web.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The ramp assertions gate the deploy. A site that documents tokens which
+      # fail their own contrast targets is worse than no site.
+      - name: Assert the ramp
+        run: npm test
+
+      # The cascade suite drives a real browser, because specificity and
+      # `color-scheme` resolution cannot be checked by reading the source — four
+      # defects here rendered correctly in one OS mode and wrongly in the other.
+      #
+      # ACHROMA_REQUIRE_BROWSER=1 turns a missing Chrome into a failure instead
+      # of a skip. A silent skip is indistinguishable from a pass, and this is
+      # the suite whose absence would be least noticeable.
+      - name: Assert the cascade in a real browser
+        env:
+          ACHROMA_REQUIRE_BROWSER: '1'
+        run: npm run test:cascade
+
+      - name: Assemble the artifact
+        run: |
+          mkdir -p _site/fonts
+          cp proof.html _site/index.html
+          cp achroma.css achroma.tailwind.css _site/
+          cp fonts/*.woff2 _site/fonts/
+          touch _site/.nojekyll
+          echo "total: $(du -sh _site | cut -f1)"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  # Pull requests run the assertions above but must not deploy — a fork's PR
+  # would otherwise publish to the live site.
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
