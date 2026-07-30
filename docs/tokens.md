@@ -413,7 +413,7 @@ quietly dropping below 4.5:1, and no assertion in the repo will catch it.
 
 Two further constraints on the grain, both counter-intuitive enough to state:
 
-- **The data URI must stay inline in the `.grain` rule, in the comma form.**
+- **The data URI must stay inline in the `.ac-grain` rule, in the comma form.**
   Moving it into a custom property, or switching to `;base64` or `;utf8`,
   truncates it at the first semicolon when `test/contrast.mjs` parses the file —
   93% of the value gone, no error, every other check still green, and a grain that

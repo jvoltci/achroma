@@ -344,8 +344,8 @@ check(
     'loses the end of the SVG first, so this is what truncation looks like',
 );
 check(
-  /\.grain\s*\{[^}]*background-image\s*:/.test(code),
-  '.grain declares no background-image — the overlay would paint nothing',
+  /\.ac-grain\s*\{[^}]*background-image\s*:/.test(code),
+  '.ac-grain declares no background-image — the overlay would paint nothing',
 );
 
 // Every custom property in the file, not only the ones between the markers: the
@@ -418,7 +418,7 @@ if (check(layerAt !== -1, 'achroma.css declares no `@layer base {` — the base 
   }
   const layered = code.slice(layerAt, end);
   const outside = code.slice(0, layerAt) + code.slice(end);
-  for (const sel of ['body', '.grain', '.wash', '.label', '.display', ':focus-visible', 'h1']) {
+  for (const sel of ['body', '.ac-grain', '.ac-wash', '.ac-label', '.ac-display', ':focus-visible', 'h1']) {
     check(
       new RegExp(`(^|[,{}\\s])${sel.replace(/[.:]/g, (c) => `\\${c}`)}\\s*[,{]`, 'm').test(layered),
       `the \`${sel}\` rule is not inside @layer base — unlayered, it beats every ` +

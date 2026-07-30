@@ -201,7 +201,7 @@ const page = (head, bodyClass = '') => `<!doctype html><html><head><meta charset
 ${head}</head><body class="${bodyClass}">
 <h1 id="h">H</h1><p><strong id="s">s</strong></p>
 <input id="inp"><button id="btn">b</button>
-<div class="grain" aria-hidden="true"></div></body></html>`;
+<div class="ac-grain" aria-hidden="true"></div></body></html>`;
 
 const failures = [];
 const check = (ok, message) => { if (!ok) failures.push(message); return ok; };
@@ -341,7 +341,7 @@ for (const [os, wantFg] of [['light', LIGHT_FG], ['dark', DARK_FG]]) {
 const GRAIN_URL = fixture('grain.html', `<!doctype html><html><head><meta charset="utf-8">
 ${ACHROMA}<style>@keyframes spin { to { transform: rotate(360deg) } }
 #spin { animation: spin 1s linear infinite; }</style></head>
-<body><div id="spin"></div><div class="grain" aria-hidden="true"></div></body></html>`);
+<body><div id="spin"></div><div class="ac-grain" aria-hidden="true"></div></body></html>`);
 const GRAIN_CASES = [
   ['no preference', [], '', 'block'],
   ['prefers-reduced-motion: reduce', [{ name: 'prefers-reduced-motion', value: 'reduce' }], '', 'block'],
@@ -353,7 +353,7 @@ for (const [name, features, media, wantDisplay] of GRAIN_CASES) {
   await emulate(features, media);
   await navigate(GRAIN_URL);
   const m = await evaluate(`(() => ({
-    grain: getComputedStyle(document.querySelector('.grain')).display,
+    grain: getComputedStyle(document.querySelector('.ac-grain')).display,
     iterations: getComputedStyle(document.getElementById('spin')).animationIterationCount,
   }))()`);
   expect(m.grain, wantDisplay, `I5: grain display under ${name}`);

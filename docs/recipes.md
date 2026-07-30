@@ -187,17 +187,17 @@ subject.
 
 ## The micro-label
 
-`.label` ships in `achroma.css`, so this is markup only:
+`.ac-label` ships in `achroma.css`, so this is markup only:
 
 ```html
-<p class="label">Token reference</p>
+<p class="ac-label">Token reference</p>
 ```
 
 It is the other half of the type signature — tiny, wide, uppercase, mono — and it
 is what sits opposite the huge-and-thin display treatment:
 
 ```css
-.label {
+.ac-label {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   font-weight: var(--w-medium);
@@ -212,13 +212,13 @@ paragraph. Do not use it for body copy.
 
 ## Grain overlay
 
-`.grain` ships too. One fixed element, no JavaScript, as the **last child of
+`.ac-grain` ships too. One fixed element, no JavaScript, as the **last child of
 `body`**:
 
 ```html
 <body>
   …
-  <div class="grain" aria-hidden="true"></div>
+  <div class="ac-grain" aria-hidden="true"></div>
 </body>
 ```
 

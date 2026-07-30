@@ -87,11 +87,16 @@ step costs **α 0.023 in light and α 0.528 in dark** — 23× apart. Two conseq
 
 Full measurements in [Elevation](tokens.md#elevation).
 
-## The signature ships as two classes
+## The signature ships as four classes
 
-`.display` is huge, thin and tight; `.label` is tiny, wide, uppercase and mono. The
-tension between them is the look, and both live in the package rather than only in
-these docs. `.grain` and `.wash` are the opt-in texture pair.
+`.ac-display` is huge, thin and tight; `.ac-label` is tiny, wide, uppercase and
+mono. The tension between the two is the look, and both live in the package rather
+than only in these docs. `.ac-grain` and `.ac-wash` are the opt-in texture pair.
+
+The `ac-` prefix is deliberate. These classes sit in `@layer base`, so any consumer
+rule of the same name wins **silently** — a plain `.label {}` in your own CSS would
+beat achroma's with no error anywhere, and `display` and `label` are common enough
+that the collision is a matter of time.
 
 ## The live reference
 

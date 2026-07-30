@@ -598,6 +598,18 @@
  * The :root token blocks above stay unlayered on purpose: they define custom
  * properties, which no utility competes for, and unlayered means a consumer
  * needs no layer machinery to override them.
+ *
+ * EVERY CLASS THIS FILE SHIPS IS PREFIXED `ac-`, and the reason is the same
+ * @layer base that everything else here turns on. Being layered is what lets a
+ * consumer override us — but it also means ANY unlayered rule of the same name
+ * wins, silently, with no error and no warning. A plain `.label {}` in a
+ * consumer's own CSS would simply defeat ours.
+ *
+ * The direction of that failure is the safe one, so the layer stays. The prefix
+ * is what stops it happening by accident: `display` and `label` are ordinary
+ * enough words that a collision is a matter of time, and Bootstrap already ships
+ * `.display-1` through `.display-6`. Tokens are deliberately NOT prefixed — a
+ * consumer re-pointing `--bg` is a feature, not a collision.
  */
 
 @layer base {
@@ -737,7 +749,7 @@
    * file — with no error, just a grain that quietly stops working. That rule
    * is enforced by assertions now, not only by this comment.
    *
-   * Usage: <div class="grain" aria-hidden="true"></div> as the last child of
+   * Usage: <div class="ac-grain" aria-hidden="true"></div> as the last child of
    * body.
    *
    * background-size stays at 180px, matching the SVG's own viewport, and the
@@ -766,7 +778,7 @@
    * stronger at 2x, the lever is a LARGER background-size, or a min-resolution
    * query raising the opacity. It is not a smaller tile.
    */
-  .grain {
+  .ac-grain {
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -779,7 +791,7 @@
 
   /* ── the display treatment ──────────────────────────────────────────
    *
-   * One half of the type signature: huge, thin, tight. The other half is .label
+   * One half of the type signature: huge, thin, tight. The other half is .ac-label
    * below — tiny, wide, uppercase, mono. The tension between the two IS the
    * look, and until now it lived in proof.html's <style> block instead of in
    * the package, so a consumer could install achroma and still have no way to
@@ -787,7 +799,7 @@
    *
    * Not an h1 default, and not a margin. A heading is structural; a display
    * treatment is editorial. Tying them together would make every h1 on a dense
-   * page 5rem tall. Apply it explicitly: <h1 class="display">.
+   * page 5rem tall. Apply it explicitly: <h1 class="ac-display">.
    *
    * --w-thin is 200 and not Geist's available 100. --text-display clamps down to
    * 2.5rem on a narrow viewport, and hairline weights break up below roughly
@@ -798,7 +810,7 @@
    * normal wrapping, and a one-word orphan under a 5rem headline is the single
    * most common way display type looks unfinished.
    */
-  .display {
+  .ac-display {
     font-size: var(--text-display);
     font-weight: var(--w-thin);
     letter-spacing: var(--track-display);
@@ -806,14 +818,14 @@
     text-wrap: balance;
   }
 
-  /* Opt-in atmosphere, the counterpart to .grain. background-image alone, so it
+  /* Opt-in atmosphere, the counterpart to .ac-grain. background-image alone, so it
    * composes with whatever set the background colour instead of replacing it.
    *
    * It has to be a class rather than a default for a mechanical reason as well
    * as a taste one: `background: var(--bg)` on body is a shorthand and resets
-   * background-image to none, so the token could never apply by itself. .wash is
-   * 0,1,0 against body's 0,0,1, so <body class="wash"> wins either way. */
-  .wash {
+   * background-image to none, so the token could never apply by itself. .ac-wash is
+   * 0,1,0 against body's 0,0,1, so <body class="ac-wash"> wins either way. */
+  .ac-wash {
     background-image: var(--wash);
   }
 
@@ -821,7 +833,7 @@
    *
    * The other half of the type signature: tiny, wide, uppercase, mono.
    */
-  .label {
+  .ac-label {
     font-family: var(--font-mono);
     font-size: var(--text-2xs);
     font-weight: var(--w-medium);
@@ -869,13 +881,13 @@
  * detail for no motion benefit. These two queries are the ones that actually
  * mean "less visual noise". */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .grain {
+  .ac-grain {
     display: none;
   }
 }
 
 @media print {
-  .grain {
+  .ac-grain {
     display: none;
   }
 }

@@ -86,16 +86,21 @@ Two consequences worth knowing before you use them:
   dialog at α 0.65 and 1.19:1 at α 0.80. Dark dialogs get their separation from
   `--bg-raised`, `--shadow-3` and a hairline.
 
-## The signature ships as two classes
+## The signature ships as four classes
 
-`.display` is huge, thin and tight; `.label` is tiny, wide, uppercase and mono. The
-tension between them is the look, and both are in the package rather than only in
-the docs. `.grain` and `.wash` are the two opt-in texture classes.
+`.ac-display` is huge, thin and tight; `.ac-label` is tiny, wide, uppercase and
+mono. The tension between the two is the look, and both are in the package rather
+than only in these docs. `.ac-grain` and `.ac-wash` are the opt-in texture pair.
+
+Every class carries the `ac-` prefix, and that is not decoration. They live in
+`@layer base`, so **any** consumer rule of the same name wins silently — a plain
+`.label {}` in your own CSS would beat achroma's with no error anywhere. `display`
+and `label` are common enough that the collision is a matter of time.
 
 ```html
-<h1 class="display">Achromatic.</h1>
-<p class="label">token reference</p>
-<body class="wash">…<div class="grain" aria-hidden="true"></div></body>
+<h1 class="ac-display">Achromatic.</h1>
+<p class="ac-label">token reference</p>
+<body class="ac-wash">…<div class="ac-grain" aria-hidden="true"></div></body>
 ```
 
 ## Dark mode

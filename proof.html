@@ -18,11 +18,11 @@
         margin: 0 auto;
       }
 
-      /* .display and .label both ship in achroma.css now, so this page no
+      /* .ac-display and .ac-label both ship in achroma.css now, so this page no
          longer defines them — it only adds the margin the class deliberately
          leaves alone, since margin is layout and not a type treatment. If the
          headline below renders at body size, the shipped class is broken. */
-      .display {
+      .ac-display {
         margin: 0 0 var(--s-5);
       }
 
@@ -104,7 +104,7 @@
         border-bottom: 1px solid var(--hairline);
         padding-bottom: var(--s-3);
       }
-      .row > .label {
+      .row > .ac-label {
         display: block;
         margin-bottom: var(--s-1);
       }
@@ -312,12 +312,12 @@
       }
     </style>
   </head>
-  <!-- class="wash" is the shipped opt-in atmosphere token, demonstrated here
+  <!-- class="ac-wash" is the shipped opt-in atmosphere token, demonstrated here
        rather than only documented. Remove it and the page reads flatter. -->
-  <body class="wash">
+  <body class="ac-wash">
     <main>
       <div class="top">
-        <p class="label" style="margin: 0">achroma 0.2.0 — token reference</p>
+        <p class="ac-label" style="margin: 0">achroma 0.2.0 — token reference</p>
         <div class="modes">
           <button type="button" data-mode="auto" class="filled">Auto</button>
           <button type="button" data-mode="light">Light</button>
@@ -325,7 +325,7 @@
         </div>
       </div>
 
-      <h1 class="display">Achromatic.</h1>
+      <h1 class="ac-display">Achromatic.</h1>
       <p class="lede">
         Black, white and greys, with hue reserved for meaning. Every value on this
         page comes from a token. Use the switch above to compare both modes — and
@@ -367,14 +367,14 @@
           reason you can see them — switch to dark and the tonal step takes over.
         </p>
         <div class="grid2" style="margin-top: var(--s-5)">
-          <div class="lift e1"><span class="label">shadow-1</span><br />Resting lift — button, input.</div>
-          <div class="lift e2"><span class="label">shadow-2</span><br />Card, popover, dropdown.</div>
-          <div class="lift e3"><span class="label">shadow-3</span><br />Modal, command palette.</div>
+          <div class="lift e1"><span class="ac-label">shadow-1</span><br />Resting lift — button, input.</div>
+          <div class="lift e2"><span class="ac-label">shadow-2</span><br />Card, popover, dropdown.</div>
+          <div class="lift e3"><span class="ac-label">shadow-3</span><br />Modal, command palette.</div>
           <div class="stage">
             Backdrop content, behind the scrim.
             <div class="scrim"></div>
             <div class="dialog">
-              <span class="label">scrim + shadow-3</span><br />
+              <span class="ac-label">scrim + shadow-3</span><br />
               A dialog over <code>--scrim</code>.
             </div>
           </div>
@@ -446,7 +446,7 @@
       </section>
     </main>
 
-    <div class="grain" aria-hidden="true"></div>
+    <div class="ac-grain" aria-hidden="true"></div>
 
     <script type="module">
       // Reads computed values, so this page cannot claim a token exists when it
@@ -487,7 +487,7 @@
 
       document.getElementById('type').innerHTML = TYPE.map(
         ([name, size, weight, track]) =>
-          `<div class="row"><span class="label">${name}</span>
+          `<div class="row"><span class="ac-label">${name}</span>
             <span class="sample" style="font-size:${size};font-weight:${weight};letter-spacing:${track}">
               Extract text from any document</span></div>`,
       ).join('');
