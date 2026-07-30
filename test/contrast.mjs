@@ -152,6 +152,19 @@ for (const alias of COLOUR_ALIASES) {
 // this (chroma 0 and L in [0,1] always lands in gamut), which is why the check
 // is scoped to tokens that actually carry hue.
 const CHROMATIC = COLOUR_ALIASES.filter((n) => /^--(danger|warn|ok)-/.test(n));
+
+// The loop below skips a token it cannot resolve, which is only safe because
+// every chromatic token also has a contrast target — and there, an unresolvable
+// value is a loud `cannot resolve` failure. That coupling is load-bearing and
+// invisible, so assert it: a chromatic alias added here but forgotten in TARGETS
+// would become gamut-skippable, and nothing else would notice.
+for (const name of CHROMATIC) {
+  check(
+    TARGETS.some(([fg, bg]) => fg === name || bg === name),
+    `${name} carries hue but appears in no TARGETS entry — the gamut check could skip it silently`,
+  );
+}
+
 for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...dark])]]) {
   for (const name of CHROMATIC) {
     const c = resolve(table.get(name) ?? '', ramp);
