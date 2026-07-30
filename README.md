@@ -18,7 +18,11 @@ npm i achroma
 @import 'achroma/achroma.css';
 ```
 
-No tooling? `<link rel="stylesheet" href="https://unpkg.com/achroma/achroma.css">`
+No tooling? `<link rel="stylesheet" href="https://unpkg.com/achroma@0/achroma.css">`
+
+The major version is pinned deliberately. A copy-pasted `<link>` has no lockfile
+and no way to notice a breaking token rename — it would just quietly lose its
+styling.
 
 Tailwind v4 + shadcn, additionally:
 
