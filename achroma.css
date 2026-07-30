@@ -270,6 +270,33 @@
 
   /* ── texture ──────────────────────────────────────────────────────── */
   --grain-opacity: 0.10;
+
+  /* A single top-light wash, one step of the ramp, fading out by 55% of the
+   * viewport. Achromatic systems read flat, and this is the cheapest depth
+   * available that introduces no hue.
+   *
+   * It is one ramp step and no more, for the same reason --grain-opacity is
+   * capped: a wash changes --bg locally, so every ratio computed from the bare
+   * token becomes optimistic, and contrast.mjs cannot see it. In LIGHT the wash
+   * lightens the page, which pushes dark text further clear — harmless. In DARK
+   * it also lightens, which pushes light text TOWARD failing, so dark is the
+   * side that constrains the value. Measured on painted pixels at the top of
+   * the page, where the wash is strongest, decoded from real pixels:
+   *
+   *              bg Y      --fg     --fg-dim   (floors: 7.0 / 4.5)
+   *   light top  0.97345   19.63    5.35   <- wash HELPS light
+   *   light base 0.95597   19.30    5.26
+   *   dark  top  0.00700   16.75    7.39   <- wash costs dark 0.30
+   *   dark  base 0.00478   17.43    7.69
+   *
+   * One ramp step is the most that fits. Two would put dark --fg-dim near its
+   * floor, and contrast.mjs would still report 7.69 because it reads the bare
+   * token and never sees the wash.
+   *
+   * Opt in with `background-image: var(--wash)` on body. Not applied by
+   * default — a design system should not decide that every consumer's page has
+   * atmosphere. */
+  --wash: radial-gradient(120% 70% at 50% -15%, var(--n-0) 0%, transparent 55%);
 }
 
 /* @achroma dark */
@@ -299,6 +326,9 @@
     --ok-line: oklch(0.52 0.11 152);
     --ok-bg: oklch(0.230 0.040 152);
     --grain-opacity: 0.07;
+    /* One ramp step, as in light. Dark is the side that constrains it: the wash
+     * lightens the page, which moves light-on-dark text toward its floor. */
+    --wash: radial-gradient(120% 70% at 50% -15%, var(--n-850) 0%, transparent 55%);
   }
 }
 
@@ -333,6 +363,9 @@
   --ok-line: oklch(0.52 0.11 152);
   --ok-bg: oklch(0.230 0.040 152);
   --grain-opacity: 0.07;
+  /* One ramp step, as in light. Dark is the side that constrains it: the wash
+   * lightens the page, which moves light-on-dark text toward its floor. */
+  --wash: radial-gradient(120% 70% at 50% -15%, var(--n-850) 0%, transparent 55%);
 }
 
 /* @achroma light-class */
@@ -371,6 +404,7 @@
   --ok-line: oklch(0.58 0.12 150);
   --ok-bg: oklch(0.965 0.018 150);
   --grain-opacity: 0.10;
+  --wash: radial-gradient(120% 70% at 50% -15%, var(--n-0) 0%, transparent 55%);
 }
 
 /* ── base ─────────────────────────────────────────────────────────────
