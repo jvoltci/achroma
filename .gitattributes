@@ -1,1 +1,6 @@
+# Normalise line endings for text, so a Windows clone does not rewrite the
+# package's own source. The fonts must never be touched — a woff2 mangled by
+# a line-ending conversion still commits and still diffs clean, and only shows
+# up as the system fallback rendering in a browser.
+* text=auto eol=lf
 *.woff2 binary
