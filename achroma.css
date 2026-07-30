@@ -493,6 +493,21 @@
    * surface read as material rather than flat — the single highest-leverage
    * detail in the system.
    *
+   * --grain-opacity HAS A CEILING, and it is an accessibility one. The overlay
+   * sits above everything, so it composites over foreground and background
+   * alike and compresses every contrast ratio in the file. contrast.mjs
+   * computes from the bare token values and cannot see this. Measured from
+   * painted pixels, light mode, --fg-dim on --bg against its 4.5:1 floor:
+   *
+   *   opacity   off     0.05    0.10    0.12    0.15    0.18    0.25
+   *   ratio     5.260   5.019   4.807   4.722   4.598   4.487   4.229
+   *                                                     ^ breaches 4.5
+   *
+   * So 0.18 — which reads as "clearly grainy" — puts --fg-dim below WCAG AA.
+   * The shipped 0.10 leaves 0.307 of margin. Do not raise it past ~0.15, and if
+   * you do, re-measure rather than assume: the failure is body text quietly
+   * dropping below 4.5:1, which no assertion here will catch.
+   *
    * The data URI stays inline here and uses the comma form on purpose. Moving
    * it into a custom property, or switching to the ;base64 or ;utf8 form,
    * would truncate it at the semicolon when test/contrast.mjs parses this
@@ -501,6 +516,32 @@
    *
    * Usage: <div class="grain" aria-hidden="true"></div> as the last child of
    * body.
+   *
+   * background-size stays at 180px, matching the SVG's own viewport, and the
+   * reason is counter-intuitive enough to be worth writing down.
+   *
+   * Chrome RE-RASTERISES the filter at device resolution; it does not upscale a
+   * 180x180 bitmap. Measured: at 2x only 0.5% of horizontally adjacent device
+   * pixels are identical, where nearest-neighbour upscaling would give ~100%.
+   * So noise AMPLITUDE is untouched by DPI and by this value — per-pixel
+   * luminance sd is ~1.16 (light) and ~1.38 (dark) across every combination of
+   * 90px/180px and 1x/2x.
+   *
+   * What does change is the noise's spatial frequency, and so how much texture
+   * survives at a fixed physical size. sd of 6-CSS-pixel block means, which is
+   * equal physical area at both DPIs:
+   *
+   *              180px    90px
+   *   light 1x   0.1402   0.1566   (+12%)
+   *   light 2x   0.0860   0.0641   (-26%)
+   *   dark  1x   0.1639   0.2317   (+41%)
+   *   dark  2x   0.0951   0.0820   (-14%)
+   *
+   * Halving to 90px helps at 1x and HURTS at 2x — the wrong trade when most of
+   * the audience is on a retina display — and it doubles the tile repeat, 16
+   * across a 1440px viewport instead of 8. If the grain ever needs to read
+   * stronger at 2x, the lever is a LARGER background-size, or a min-resolution
+   * query raising the opacity. It is not a smaller tile.
    */
   .grain {
     position: fixed;
@@ -509,7 +550,7 @@
     pointer-events: none;
     opacity: var(--grain-opacity);
     background-repeat: repeat;
-    background-size: 90px 90px;
+    background-size: 180px 180px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
