@@ -427,6 +427,21 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* The `hidden` attribute needs !important, which is otherwise banned in this
+   * file. The UA sheet's `[hidden] { display: none }` is a 0,1,0 author-defeatable
+   * rule, so ANY author `display` beats it: `.results { display: grid }` plus
+   * `<section id="results" hidden>` renders the section anyway.
+   *
+   * Found in naina, where two empty result panes had been painting on every
+   * first load — the markup said hidden, the stylesheet said grid, the
+   * stylesheet won, and nothing anywhere reported a problem. Every consumer
+   * that toggles visibility through the attribute is exposed to the same thing,
+   * which is why the guard belongs here rather than in each app. Tailwind's
+   * preflight carries this rule for the same reason. */
+  [hidden] {
+    display: none !important;
+  }
+
   body {
     margin: 0;
     background: var(--bg);
