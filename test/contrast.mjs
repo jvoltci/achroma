@@ -1,6 +1,6 @@
 // Asserts the things about achroma.css that cannot be seen by reading it.
 //
-// Seven classes of check, in order of how quietly they would otherwise fail:
+// Eight classes of check, in order of how quietly they would otherwise fail:
 //
 //   1. grain          a data URI moved into a custom property is truncated at
 //                     its first semicolon by this very parser — 93% of the
@@ -15,7 +15,9 @@
 //   6. cascade        specificity and layer bugs render correctly in one OS
 //                     mode and wrongly in the other, so eyeballing one machine
 //                     proves nothing
-//   7. contrast       computed, never assumed
+//   7. bridge         a var() aimed at a renamed token is the empty string, so
+//                     the shadcn component renders unstyled and nothing warns
+//   8. contrast       computed, never assumed
 //
 // Prints every ratio whether it passes or not. A pass/fail line tells you less
 // than the numbers do.
@@ -359,7 +361,56 @@ if (check(layerAt !== -1, 'achroma.css declares no `@layer base {` — the base 
   );
 }
 
-// ── 7. contrast ───────────────────────────────────────────────────────
+// ── 7. the Tailwind bridge resolves ───────────────────────────────────
+//
+// achroma.tailwind.css maps shadcn's variable names onto Achroma tokens, so it
+// is nothing but `var()` indirections. A var() pointing at a token that was
+// renamed or removed resolves to the empty string — the component renders
+// unstyled, in the browser, with no error anywhere. Nothing in the CSS pipeline
+// warns about it.
+//
+// So: every token the bridge references must exist, and the bridge must declare
+// no colour of its own. The second half matters because a literal in the bridge
+// would be a colour outside the ramp, invisible to every other check in this
+// file.
+{
+  const bridgePath = join(root, 'achroma.tailwind.css');
+  let bridge = null;
+  try {
+    bridge = readFileSync(bridgePath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  } catch {
+    // Not yet written. Absent is fine; broken is not.
+  }
+
+  if (bridge !== null) {
+    const defined = new Set([...code.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+    const referenced = new Set(
+      [...bridge.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/g)].map((m) => m[1]),
+    );
+
+    check(referenced.size > 0, 'achroma.tailwind.css references no tokens at all');
+
+    for (const name of referenced) {
+      check(
+        defined.has(name),
+        `achroma.tailwind.css references ${name}, which achroma.css does not define. ` +
+          `An unresolved var() is the empty string, so the component renders ` +
+          `unstyled with no error.`,
+      );
+    }
+
+    for (const m of bridge.matchAll(/(oklch\(|rgba?\(|hsla?\(|#[0-9a-fA-F]{3,8})/g)) {
+      check(
+        false,
+        `achroma.tailwind.css declares a literal colour (${m[1]}). The bridge must ` +
+          `be pure indirection — a literal here is a colour outside the ramp that ` +
+          `no other check in this file can see.`,
+      );
+    }
+  }
+}
+
+// ── 8. contrast ───────────────────────────────────────────────────────
 for (const [mode, table] of [['light', light], ['dark', new Map([...light, ...dark])]]) {
   console.log(`\n${mode}`);
   for (const [fg, bg, min] of TARGETS) {

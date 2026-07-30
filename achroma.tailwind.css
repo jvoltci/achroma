@@ -1,0 +1,102 @@
+/* Achroma -> Tailwind v4 + shadcn bridge.
+ *
+ * Import order matters and is not optional:
+ *
+ *   @import 'tailwindcss';
+ *   @import 'achroma/achroma.css';
+ *   @import 'achroma/achroma.tailwind.css';
+ *
+ * Tailwind first, because achroma's element defaults live in `@layer base` and
+ * so does Tailwind's preflight — within one layer the last rule wins. Reversed,
+ * the preflight's `h1…h6 { font-weight: inherit }` overwrites achroma's heading
+ * rules and they render at the body weight. Nothing errors; the page just looks
+ * wrong.
+ *
+ * This file maps shadcn's semantic variable names onto Achroma tokens, so Radix
+ * components inherit the system with no edits to their own files. It declares no
+ * colour of its own — every value here is an indirection.
+ *
+ * Not needed by plain-CSS consumers. achroma.css alone is the whole system.
+ */
+
+@theme inline {
+  /* ── surfaces ─────────────────────────────────────────────────────── */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--bg-raised);
+  --color-card-foreground: var(--fg);
+  --color-popover: var(--bg-raised);
+  --color-popover-foreground: var(--fg);
+
+  /* ── interaction ──────────────────────────────────────────────────
+   *
+   * This is the line that makes a shadcn app achromatic. --primary is where
+   * its accent hue lived; here it is ink. A filled primary button becomes
+   * --fg on --bg, which is why --primary-foreground is the background rather
+   * than a light neutral.
+   */
+  --color-primary: var(--fg);
+  --color-primary-foreground: var(--bg);
+  --color-secondary: var(--bg-sunken);
+  --color-secondary-foreground: var(--fg);
+  --color-muted: var(--bg-sunken);
+  --color-muted-foreground: var(--fg-dim);
+  --color-accent: var(--bg-sunken);
+  --color-accent-foreground: var(--fg);
+
+  /* ── semantic ─────────────────────────────────────────────────────
+   *
+   * shadcn has only `destructive`, so warn and ok have no mapping here and
+   * must be used through the Achroma tokens directly. The -text variant is
+   * the one that clears 4.5:1; --danger-line would not.
+   */
+  --color-destructive: var(--danger-text);
+  --color-destructive-foreground: var(--n-0);
+
+  /* ── lines and focus ──────────────────────────────────────────────
+   *
+   * border gets the subtle hairline, input the stronger rule — a form control
+   * that reads as faintly as a divider is a usability problem, not a style
+   * choice. --ring is an Achroma token so an inked surface can invert it.
+   */
+  --color-border: var(--hairline);
+  --color-input: var(--rule);
+  --color-ring: var(--ring);
+
+  /* ── sidebar, which shadcn treats as its own surface set ───────────── */
+  --color-sidebar: var(--bg-sunken);
+  --color-sidebar-foreground: var(--fg);
+  --color-sidebar-primary: var(--fg);
+  --color-sidebar-primary-foreground: var(--bg);
+  --color-sidebar-accent: var(--bg-raised);
+  --color-sidebar-accent-foreground: var(--fg);
+  --color-sidebar-border: var(--hairline);
+  --color-sidebar-ring: var(--ring);
+
+  /* ── type and shape ───────────────────────────────────────────────── */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-lg);
+}
+
+/* ── deliberately absent: --color-chart-1 … --color-chart-5 ───────────
+ *
+ * A five-grey substitution would be the wrong answer, not a partial one.
+ * Series in an achromatic system cannot be distinguished by hue, and five
+ * neutrals close enough to sit on one background are not reliably
+ * distinguishable from each other either — particularly in dark mode, where
+ * the usable lightness range is compressed.
+ *
+ * An achromatic chart needs a lightness ramp carrying at most three or four
+ * series, plus a non-colour channel for the rest: dash pattern, fill texture,
+ * or direct labelling instead of a legend. That is a data-visualisation
+ * problem with its own constraints, and guessing at it here would leave a
+ * consumer with five muddy greys and no legend they can read.
+ *
+ * Until that is designed, charts keep their own colours. They are content,
+ * not interface — the same carve-out that lets a highlighter be yellow.
+ */
