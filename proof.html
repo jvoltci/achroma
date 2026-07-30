@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>achroma — token reference</title>
+    <link rel="stylesheet" href="./achroma.css" />
+    <style>
+      /* Page layout only. Every visual value comes from a token — a hardcoded
+         colour, size or duration in here would be a finding. */
+
+      body {
+        padding: var(--s-10) var(--s-6) var(--s-24);
+      }
+
+      main {
+        max-width: 70rem;
+        margin: 0 auto;
+      }
+
+      /* ── the signature: huge and thin against tiny and wide ───────── */
+
+      .display {
+        font-size: var(--text-display);
+        font-weight: var(--w-thin);
+        letter-spacing: var(--track-display);
+        line-height: var(--lh-display);
+        margin: 0 0 var(--s-5);
+      }
+
+      .lede {
+        color: var(--fg-dim);
+        font-size: var(--text-md);
+        max-width: 44rem;
+        margin: 0;
+      }
+
+      section {
+        margin-top: var(--s-12);
+      }
+
+      section > h2 {
+        font-size: var(--text-2xs);
+        font-family: var(--font-mono);
+        font-weight: var(--w-medium);
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: var(--fg-faint);
+        margin: 0 0 var(--s-5);
+        padding-bottom: var(--s-3);
+        border-bottom: 1px solid var(--rule);
+      }
+
+      /* ── swatches ─────────────────────────────────────────────────── */
+
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+        gap: var(--s-2);
+      }
+
+      .sw {
+        border: 1px solid var(--rule);
+        border-radius: var(--r-sm);
+        overflow: hidden;
+      }
+      /* A checkerboard behind every chip, because the swatches for tokens at or
+         near --bg would otherwise be invisible against the page — which is
+         exactly the token you most need to see. */
+      .sw .chip {
+        height: 4rem;
+        background-image:
+          linear-gradient(45deg, var(--n-300) 25%, transparent 25% 75%, var(--n-300) 75%),
+          linear-gradient(45deg, var(--n-300) 25%, transparent 25% 75%, var(--n-300) 75%);
+        background-size: 12px 12px;
+        background-position: 0 0, 6px 6px;
+      }
+      .sw .chip span {
+        display: block;
+        height: 100%;
+      }
+      .sw p {
+        margin: 0;
+        padding: var(--s-2);
+        border-top: 1px solid var(--rule);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--fg-dim);
+        white-space: nowrap;
+      }
+      .sw p span {
+        display: block;
+        color: var(--fg-faint);
+        font-size: 0.625rem;
+      }
+
+      /* ── type scale ───────────────────────────────────────────────── */
+
+      .rows {
+        display: grid;
+        gap: var(--s-4);
+      }
+      /* Stacked, not a flex row: the display sample is ~77px at this viewport
+         and overflowed its row when the label sat beside it. */
+      .row {
+        border-bottom: 1px solid var(--hairline);
+        padding-bottom: var(--s-3);
+      }
+      .row > .label {
+        display: block;
+        margin-bottom: var(--s-1);
+      }
+      .row .sample {
+        display: block;
+        line-height: 1.05;
+        overflow-wrap: anywhere;
+      }
+
+      /* ── surfaces ─────────────────────────────────────────────────── */
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+        gap: var(--s-4);
+      }
+
+      .card {
+        background: var(--bg-raised);
+        border: 1px solid var(--hairline);
+        border-radius: var(--r-md);
+        padding: var(--s-5);
+      }
+      .card.sunken {
+        background: var(--bg-sunken);
+      }
+      .card h3 {
+        font-size: var(--text-base);
+        font-weight: var(--w-medium);
+        letter-spacing: var(--track-tight);
+        margin: 0 0 var(--s-2);
+      }
+      .card p {
+        margin: 0 0 var(--s-4);
+        color: var(--fg-dim);
+        font-size: var(--text-sm);
+      }
+
+      /* ── controls ─────────────────────────────────────────────────── */
+
+      button {
+        font: inherit;
+        font-size: var(--text-sm);
+        background: transparent;
+        color: var(--fg-dim);
+        border: 1px solid var(--rule);
+        border-radius: var(--r-sm);
+        padding: var(--s-2) var(--s-3);
+        cursor: pointer;
+        transition:
+          color var(--dur-1) var(--ease-out),
+          border-color var(--dur-1) var(--ease-out),
+          transform var(--dur-1) var(--ease-spring);
+      }
+      button:hover {
+        color: var(--fg);
+        border-color: var(--fg);
+        transform: translateY(-1px);
+      }
+      button.filled {
+        background: var(--fg);
+        color: var(--bg);
+        border-color: var(--fg);
+        font-weight: var(--w-medium);
+      }
+
+      input[type='text'],
+      select {
+        font: inherit;
+        font-size: var(--text-sm);
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--rule);
+        border-radius: var(--r-sm);
+        padding: var(--s-2) var(--s-3);
+        width: 100%;
+      }
+
+      /* ── semantic callouts ────────────────────────────────────────── */
+
+      .note {
+        padding: var(--s-3) var(--s-4);
+        border: 1px solid;
+        border-left-width: 3px;
+        border-radius: var(--r-sm);
+        font-size: var(--text-sm);
+        margin-bottom: var(--s-3);
+      }
+      .note.ok {
+        border-color: var(--ok-line);
+        background: var(--ok-bg);
+        color: var(--ok-text);
+      }
+      .note.warn {
+        border-color: var(--warn-line);
+        background: var(--warn-bg);
+        color: var(--warn-text);
+      }
+      .note.danger {
+        border-color: var(--danger-line);
+        background: var(--danger-bg);
+        color: var(--danger-text);
+      }
+
+      /* ── the mode switch ──────────────────────────────────────────── */
+
+      .top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--s-4);
+        margin-bottom: var(--s-12);
+        padding-bottom: var(--s-4);
+        border-bottom: 1px solid var(--rule);
+      }
+      .modes {
+        display: flex;
+        gap: var(--s-1);
+        flex: none;
+      }
+
+      /* Hairline-separated list — structure as the only ornament. */
+      .list {
+        border-top: 1px solid var(--hairline);
+      }
+      .list div {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--s-4);
+        padding: var(--s-3) 0;
+        border-bottom: 1px solid var(--hairline);
+        font-size: var(--text-sm);
+      }
+      .list div span:last-child {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--fg-faint);
+      }
+
+      code {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--fg-dim);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="top">
+        <p class="label" style="margin: 0">achroma 0.1.0 — token reference</p>
+        <div class="modes">
+          <button type="button" data-mode="auto" class="filled">Auto</button>
+          <button type="button" data-mode="light">Light</button>
+          <button type="button" data-mode="dark">Dark</button>
+        </div>
+      </div>
+
+      <h1 class="display">Achromatic.</h1>
+      <p class="lede">
+        Black, white and greys, with hue reserved for meaning. Every value on this
+        page comes from a token. Use the switch above to compare both modes — and
+        zoom to 200%, which is the only place a badly tiled grain shows its seams.
+      </p>
+
+      <section>
+        <h2>The ramp — 16 steps, chroma exactly 0</h2>
+        <div class="swatches" id="ramp"></div>
+      </section>
+
+      <section>
+        <h2>Aliases — what dark mode re-points</h2>
+        <div class="swatches" id="aliases"></div>
+      </section>
+
+      <section>
+        <h2>Semantics — the only colour in the system</h2>
+        <div class="note ok">Succeeded. <code>--ok-text</code> on <code>--ok-bg</code>.</div>
+        <div class="note warn">
+          Read this before trusting the output. <code>--warn-text</code> on
+          <code>--warn-bg</code>.
+        </div>
+        <div class="note danger">
+          This failed. <code>--danger-text</code> on <code>--danger-bg</code>.
+        </div>
+      </section>
+
+      <section>
+        <h2>Type — huge and thin against tiny and wide</h2>
+        <div class="rows" id="type"></div>
+      </section>
+
+      <section>
+        <h2>Surfaces, controls, structure</h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Raised surface</h3>
+            <p>
+              Hairline border, 4px radius, depth from tone rather than shadow. The
+              border is what defines the edge — the tonal step is deliberately
+              slight.
+            </p>
+            <button type="button" class="filled">Filled</button>
+            <button type="button">Default</button>
+          </div>
+
+          <div class="card sunken">
+            <h3>Sunken surface</h3>
+            <p>Tab focus through these to see the ring, which is a token so it can invert.</p>
+            <div style="display: grid; gap: var(--s-2)">
+              <input type="text" placeholder="Input on --bg" />
+              <select>
+                <option>A select</option>
+                <option>Second option</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Hairline list</h3>
+            <div class="list">
+              <div><span>Neutral ramp</span><span>16 steps</span></div>
+              <div><span>Colour aliases</span><span>18</span></div>
+              <div><span>Semantic tokens</span><span>9 × 2 modes</span></div>
+              <div><span>Dependencies</span><span>0</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Headings</h3>
+            <h1 style="font-size: var(--text-2xl); margin: 0 0 var(--s-2)">h1</h1>
+            <h2 style="font-size: var(--text-xl); margin: 0 0 var(--s-2)">h2</h2>
+            <h3 style="font-size: var(--text-lg); margin: 0 0 var(--s-2)">h3</h3>
+            <p style="margin: 0">
+              Body copy at weight 300, with <strong>strong emphasis</strong> and a
+              <code>--font-mono</code> inline code run.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Grain</h2>
+        <p class="lede">
+          Active on this page at <code id="grain-val"></code>. It is what makes an
+          achromatic surface read as material rather than flat. If you cannot see
+          it, that is the finding.
+        </p>
+      </section>
+    </main>
+
+    <div class="grain" aria-hidden="true"></div>
+
+    <script type="module">
+      // Reads computed values, so this page cannot claim a token exists when it
+      // does not. If a swatch renders transparent, that token is missing.
+      const css = () => getComputedStyle(document.documentElement);
+
+      const RAMP = [0, 25, 50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 850, 900, 950, 1000];
+      const ALIASES = [
+        '--bg', '--bg-raised', '--bg-sunken',
+        '--fg', '--fg-dim', '--fg-faint',
+        '--hairline', '--rule', '--ring',
+      ];
+      const TYPE = [
+        ['display', 'var(--text-display)', 'var(--w-thin)', 'var(--track-display)'],
+        ['2xl', 'var(--text-2xl)', 'var(--w-light)', 'var(--track-tight)'],
+        ['xl', 'var(--text-xl)', 'var(--w-light)', 'var(--track-tight)'],
+        ['lg', 'var(--text-lg)', 'var(--w-regular)', 'var(--track-normal)'],
+        ['md', 'var(--text-md)', 'var(--w-light)', 'var(--track-normal)'],
+        ['base', 'var(--text-base)', 'var(--w-light)', 'var(--track-normal)'],
+        ['sm', 'var(--text-sm)', 'var(--w-regular)', 'var(--track-normal)'],
+        ['xs', 'var(--text-xs)', 'var(--w-regular)', 'var(--track-normal)'],
+      ];
+
+      const swatch = (name) => {
+        const raw = css().getPropertyValue(name).trim();
+        const short = raw.replace(/^oklch\(|\)$/g, '') || 'MISSING';
+        return `<div class="sw"><div class="chip"><span style="background:${raw}"></span></div>
+          <p>${name.slice(2)}<span>${short}</span></p></div>`;
+      };
+
+      const paint = () => {
+        document.getElementById('ramp').innerHTML = RAMP.map((n) => swatch(`--n-${n}`)).join('');
+        document.getElementById('aliases').innerHTML = ALIASES.map(swatch).join('');
+        document.getElementById('grain-val').textContent =
+          `--grain-opacity: ${css().getPropertyValue('--grain-opacity').trim()}`;
+      };
+
+      document.getElementById('type').innerHTML = TYPE.map(
+        ([name, size, weight, track]) =>
+          `<div class="row"><span class="label">${name}</span>
+            <span class="sample" style="font-size:${size};font-weight:${weight};letter-spacing:${track}">
+              Extract text from any document</span></div>`,
+      ).join('');
+
+      // The switch drives [data-theme], which is one of the two override
+      // mechanisms the system supports. "Auto" removes it and falls back to
+      // prefers-color-scheme.
+      for (const b of document.querySelectorAll('[data-mode]')) {
+        b.addEventListener('click', () => {
+          const mode = b.dataset.mode;
+          if (mode === 'auto') delete document.documentElement.dataset.theme;
+          else document.documentElement.dataset.theme = mode;
+          for (const o of document.querySelectorAll('[data-mode]')) {
+            o.classList.toggle('filled', o === b);
+          }
+          paint();
+        });
+      }
+
+      matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paint);
+      paint();
+    </script>
+  </body>
+</html>
