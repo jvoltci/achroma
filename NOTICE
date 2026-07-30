@@ -1,0 +1,19 @@
+achroma
+Copyright 2026 jvoltci
+
+Licensed under the Apache License, Version 2.0.
+
+── Bundled fonts ────────────────────────────────────────────────────────
+
+fonts/geist-*.woff2
+fonts/geist-mono-*.woff2
+
+  Geist and Geist Mono
+  Copyright 2024 The Geist Project Authors
+  https://github.com/vercel/geist-font
+
+  Licensed under the SIL Open Font License, Version 1.1.
+  http://scripts.sil.org/OFL
+
+  Subsets extracted from @fontsource-variable/geist@5.3.0 and
+  @fontsource-variable/geist-mono@5.3.0.

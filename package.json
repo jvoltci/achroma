@@ -1,0 +1,24 @@
+{
+  "name": "achroma",
+  "version": "0.1.0",
+  "description": "An achromatic design system. Black, white and greys, with hue reserved for meaning. Zero dependencies, plain CSS custom properties.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "keywords": ["design-system", "design-tokens", "css", "achromatic", "monochrome", "greyscale"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jvoltci/achroma.git"
+  },
+  "homepage": "https://jvoltci.github.io/achroma/",
+  "exports": {
+    "./achroma.css": "./achroma.css",
+    "./achroma.tailwind.css": "./achroma.tailwind.css",
+    "./fonts/*": "./fonts/*"
+  },
+  "files": ["achroma.css", "achroma.tailwind.css", "fonts", "NOTICE"],
+  "sideEffects": ["*.css"],
+  "dependencies": {},
+  "scripts": {
+    "test": "node test/oklch.test.mjs && node test/contrast.mjs"
+  }
+}
